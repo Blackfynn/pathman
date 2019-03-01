@@ -1,0 +1,7 @@
+**/__pycache__
+**/*.pyc
+.ropeproject/
+.coverage
+*.swp
+venv/
+.mypy_cache/
