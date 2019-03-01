@@ -17,17 +17,6 @@ ansiColor('xterm') {
       stage("Test") {
         sh """make test"""
       }
-
-      if(isMaster) {
-        stage("Build Image") {
-          sh "IMAGE_TAG=${imageTag} make build"
-          sh "IMAGE_TAG=latest make build"
-        }
-        stage("Push Image") {
-          sh "IMAGE_TAG=${imageTag} make push"
-          sh "IMAGE_TAG=latest make push"
-        }
-      }
     } catch (e) {
       slackSend(color: '#b20000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL}) by ${authorName}")
       throw e
