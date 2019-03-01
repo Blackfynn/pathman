@@ -1,0 +1,14 @@
+version: '3.5'
+services:
+  pathman:
+    build:
+      context: .
+      target: test
+      dockerfile: Dockerfile
+    environment:
+      - AWS_ACCESS_KEY_ID=fake_key
+      - AWS_SECRET_ACCESS_KEY=fake_secret
+    command: bash -c "pytest --cov-report html:/docker_scratch/coverage-report --cov=pathman tests/ && flake8 pathman/ mypy pathman/"
+    image: blackfynn/pathman:${IMAGE_TAG}
+    volumes:
+    - ./pathman/:/app/pathman/
