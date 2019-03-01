@@ -1,7 +1,5 @@
 #!groovy
 
-#!groovy
-
 ansiColor('xterm') {
   node('ops-jenkins') {
     ws("pathman") {
