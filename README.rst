@@ -1,9 +1,8 @@
+.. image:: https://codecov.io/gh/Blackfynn/pathman/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/Blackfynn/pathman
 .. image:: https://travis-ci.org/Blackfynn/pathman.svg?branch=master
     :target: https://travis-ci.org/Blackfynn/pathman
-.. image:: https://codecov.io/gh/Blackfynn/pathman/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/Blackfynn/pathman
-.. image:: https://img.shields.io/pypi/pyversions/blackfynn.svg
-    :target: https://pypi.org/project/blackfynn/
+
 .. _Blackfynn: http://www.blackfynn.com/
 .. _Graph-Ingest: https://github.com/Blackfynn/graph-ingest/
 .. _s3fs: https://s3fs.readthedocs.io/en/latest/

@@ -21,4 +21,13 @@ after_success: bash <(curl -s https://codecov.io/bash)
 jobs:
   include:
     - stage: test
+      python: 3.4
+
+    - stage: test
+      python: 3.5
+
+    - stage: test
       python: 3.6
+
+    - stage: test
+      python: 3.7
