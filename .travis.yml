@@ -6,6 +6,9 @@ cache: pip
 services:
   - docker
 
+before_install:
+  - export BOTO_CONFIG=/dev/null
+
 install:
   - pip install --upgrade pip setuptools wheel
   - pip install -r requirements.txt
