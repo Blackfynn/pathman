@@ -1,0 +1,26 @@
+sudo: false
+dist: trusty
+language: python
+cache: pip
+
+services:
+  - docker
+
+install:
+  - pip install --upgrade pip setuptools wheel
+  - pip install -r requirements.txt
+  - pip install --upgrade -r requirements-test.txt
+  - pip install .
+
+script: pytest
+after_success: bash <(curl -s https://codecov.io/bash)
+
+jobs:
+  include:
+    - stage: test
+      python: 3.6
+
+    - stage: test
+      python: 3.7
+      dist: xenial
+      sudo: true
