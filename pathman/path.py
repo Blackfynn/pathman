@@ -21,6 +21,10 @@ class AbstractPath(ABC):
         pass
 
     @abstractmethod
+    def touch(self):
+        pass
+
+    @abstractmethod
     def is_dir(self):
         pass
 
@@ -126,6 +130,9 @@ class LocalPath(AbstractPath):
 
     def exists(self) -> bool:
         return self._path.exists()
+
+    def touch(self) -> None:
+        return self._path.touch()
 
     def is_dir(self) -> bool:
         return self._path.is_dir()
@@ -240,6 +247,9 @@ class S3Path(AbstractPath, RemotePath):
     def exists(self) -> bool:
         return self._path.exists(self._pathstr)
 
+    def touch(self) -> None:
+        return self._path.touch(self._pathstr)
+
     def is_dir(self) -> bool:
         return (self.exists() and not is_file(self._pathstr))
 
@@ -324,7 +334,7 @@ class Path(AbstractPath, os.PathLike):
     }
 
     def __init__(self, path: str, **kwargs) -> None:
-        """ Create a new GenericPath
+        """ Constructor for a new Path
 
         Parameters
         ----------
@@ -358,12 +368,17 @@ class Path(AbstractPath, os.PathLike):
         return Path(self._impl.__truediv__(key)._pathstr)
 
     @property
-    def extension(self):
+    def extension(self) -> str:
+        """ Get the extension if the path is a file """
         return self._impl.extension
 
     def exists(self) -> bool:
         """ Checks if the path exists """
         return self._impl.exists()
+
+    def touch(self) -> None:
+        """ Create a file at the current path """
+        return self._impl.touch()
 
     def is_dir(self) -> bool:
         """ Checks if the path is a directory """
@@ -384,7 +399,7 @@ class Path(AbstractPath, os.PathLike):
         Parameters
         ----------
         recursive : bool, optional
-            If True, removed directory and all contents recursively.
+            If True, remove directory and all contents recursively.
             If False, the directory must be empty
 
         """
@@ -414,21 +429,30 @@ class Path(AbstractPath, os.PathLike):
         ----------
         mode: str, optional
             Mode to use when opening the file
+
+        Returns
+        -------
+        file object
+
         """
         return self._impl.open(mode=mode, **kwargs)
 
-    def write_bytes(self, contents, **kwargs) -> None:
-        """ Open file, write bytes, and close file
+    def write_bytes(self, contents, **kwargs) -> int:
+        """ Open file, write bytes, and close the file
 
         Parameters
         ----------
         contents: bytes
             Content to write to the file
 
+        Returns
+        -------
+        int: number of bytes written
+
         """
         return self._impl.write_bytes(contents, **kwargs)
 
-    def write_text(self, contents, **kwargs) -> None:
+    def write_text(self, contents, **kwargs) -> int:
         """ Open file, write text, and close file
 
         Parameters
@@ -436,14 +460,18 @@ class Path(AbstractPath, os.PathLike):
         contents: str
             Content to write to the file
 
+        Returns
+        -------
+        int: number of characters written
+
         """
         return self._impl.write_text(contents, **kwargs)
 
-    def read_bytes(self, **kwargs) -> None:
+    def read_bytes(self, **kwargs) -> bytes:
         """ Open file, read bytes, and close file """
         return self._impl.read_bytes(**kwargs)
 
-    def read_text(self, **kwargs) -> None:
+    def read_text(self, **kwargs) -> str:
         """ Open file, read text, and close file """
         return self._impl.read_text(**kwargs)
 

@@ -5,3 +5,6 @@
 *.swp
 venv/
 .mypy_cache/
+
+docs/html
+docs/doctrees
