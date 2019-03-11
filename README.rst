@@ -15,9 +15,3 @@ Pathman is a utility for interacting with files using a uniform interface regard
 the files live: locally, on S3, or in some other remote service. The interface attempts closely
 follow the `pathlib` interface when possible. Support for interacting with files in S3 is done 
 through heavy use of the s3fs_ library.
-
-Testing
-========
-Tests can be run with 
-  .. code-block:: bash
-       make test
