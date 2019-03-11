@@ -20,11 +20,11 @@ after_success: bash <(curl -s https://codecov.io/bash)
 
 jobs:
   include:
-    - stage: "Style check":
+    - stage: "Style check"
       install: skip
       script: flake8 pathman/
 
-    - stage: "Static type checking":
+    - stage: "Static type checking"
       install: skip
       script: mypy pathman/
 
