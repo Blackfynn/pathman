@@ -27,6 +27,7 @@ jobs:
        - pytest
 
     - stage: release
+      if: tag IS present
       python: '3.6'
       install: skip
       script: skip
@@ -36,7 +37,7 @@ jobs:
             all_branches: true
           user: blackfynn
           password: "$PYPI_PASSWORD"
-          server: https://test.pypi.org/legacy/ # uncomment to use test pypi
+          #server: https://test.pypi.org/legacy/ # uncomment to use test pypi
           distributions: sdist bdist_wheel
         - provider: script
           on:
