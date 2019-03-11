@@ -15,23 +15,19 @@ install:
   - pip install --upgrade -r requirements-test.txt
   - pip install .
 
-script: pytest
 after_success: bash <(curl -s https://codecov.io/bash)
 
 jobs:
   include:
-    - stage: "Style check":
-      install: skip
-      script: flake8 pathman/
-
-    - stage: "Static type checking":
-      install: skip
-      script: mypy pathman/
-
-    - stage: test
-      python: 3.6
+    - stage: "Test"
+      python: '3.6'
+      script: 
+       - flake8 pathman/
+       - mypy pathman/
+       - pytest
 
     - stage: release
+      if: tag IS present
       python: '3.6'
       install: skip
       script: skip
@@ -41,7 +37,7 @@ jobs:
             all_branches: true
           user: blackfynn
           password: "$PYPI_PASSWORD"
-          server: https://test.pypi.org/legacy/ # uncomment to use test pypi
+          #server: https://test.pypi.org/legacy/ # uncomment to use test pypi
           distributions: sdist bdist_wheel
         - provider: script
           on:
