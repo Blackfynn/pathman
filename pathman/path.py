@@ -378,7 +378,8 @@ class Path(AbstractPath, os.PathLike):
 
     def touch(self) -> None:
         """ Create a file at the current path """
-        return self._impl.touch()
+        self._impl.touch()
+        return
 
     def is_dir(self) -> bool:
         """ Checks if the path is a directory """
