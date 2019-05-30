@@ -2,11 +2,15 @@
 import os
 import boto3  # type: ignore
 import shutil
+import re
+import urllib
 from typing import List, Union, no_type_check
 from abc import ABC, abstractmethod, abstractproperty
 from pathlib import Path as PathLibPath, PurePath
 from pathman.exc import UnsupportedPathTypeException, UnsupportedCopyOperation
 from s3fs import S3FileSystem  # type: ignore
+from blackfynn import Blackfynn
+from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 
 class AbstractPath(ABC):
@@ -212,6 +216,225 @@ class RemotePath(object):
     """
 
 
+class BlackfynnPath(AbstractPath, RemotePath):
+    """ Representation of a path on the Blackfynn platform """
+
+    def __init__(self, path: str, dataset=None, profile='default', **kwargs):
+        if '.' in path:
+            self._extension = path[path.rfind('.'):]
+            path = path[:path.rfind('.')]
+        else:
+            self._extension = ''
+        if dataset is not None:
+            self._pathstr = 'bf://' + os.path.join(dataset, path[len('bf://'):])
+        else:
+            self._pathstr = path
+            dataset = self.dataset
+        self._profile = 'default' if profile is None else profile
+        bf = Blackfynn(self._profile)
+        tokens = self.parts[1:]
+        root = None
+        try:
+            root = bf.get_dataset(dataset)
+        except:
+            raise FileNotFoundError("Dataset {} was not found".format(dataset))
+        for token in tokens:
+            try:
+                col = _get_collection_by_name(root, token)
+            except:
+                print(self._pathstr)
+            if col is None and token == tokens[-1]:
+                root = _get_package_by_name(root, token)
+            else:
+                root = col
+            if root is None:
+                break
+        self._object = root
+
+    def __str__(self) -> str:
+        return self._pathstr
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def __eq__(self, other) -> bool:
+        return self._pathstr == other._pathstr
+
+    def __truediv__(self, key) -> 'BlackfynnPath':
+        return self.join(key)
+
+    @property
+    def extension(self) -> str:
+        return self._extension
+
+    @property
+    def dataset(self) -> str:
+        return self.parts[0]
+
+    @property
+    def path(self):
+        return '/'.join(self.parts[1:]) + self.extension
+
+    @property
+    def parts(self):
+        parts = self._pathstr.replace("bf://", "").split("/")
+        return [part for part in parts if part not in [""]]
+
+    @property
+    def stem(self):
+        return self.parts[-1]
+
+    def exists(self) -> bool:
+        return self._object is not None and self._object.exists
+
+    def touch(self, exist_ok=True, **kwargs):
+        if self.exists():
+            if exist_ok:
+                return
+            else:
+                raise FileExistsError('{} already exists'.format(self))
+        self.write_text("")
+
+    def is_dir(self) -> bool:
+        return self.exists() and hasattr(self._object, 'upload')
+
+    def is_file(self) -> bool:
+        return self.exists() and not self.is_dir()
+
+    def mkdir(self, parents=False, exist_ok=False, **kwargs):
+        if self.exists():
+            if exist_ok:
+                return
+            else:
+                raise FileExistsError('Can\'t mkdir {}'.format(self))
+
+        bf = Blackfynn(self._profile)
+        tokens = self.parts
+        root = bf.get_dataset(tokens.pop(0))
+        for token in tokens:
+            prev_root = root
+            root = _get_collection_by_name(root, token)
+            if root is None:
+                if token != tokens[-1]:  # the missing token is not at the end
+                    if parents == False:
+                        raise FileExistsError(
+                            'Missing directory {dir} in {path}'.format(
+                                dir=token,
+                                path=self._pathstr
+                            ))
+                    else:
+                        root = prev_root.create_collection(token)
+                else:
+                    self._object = prev_root.create_collection(token)
+
+    def rmdir(self, **kwargs):
+        if self.is_dir():
+            self._object.delete()
+
+    def join(self, *pathsegments: List[str]) -> 'BlackfynnPath':
+        joined = os.path.join(self._pathstr, *pathsegments)
+        return BlackfynnPath(joined)
+
+    def open(self, mode="r", **kwargs):
+        raise NotImplementedError("Blackfynn paths can't be opened")
+
+    def write_bytes(self, contents, **kwargs):
+        return self._write(contents, 'wb')
+
+    def write_text(self, contents, **kwargs):
+        return self._write(contents, 'w')
+
+    def read_bytes(self):
+        return self._read()
+
+    def read_text(self):
+        return str(self._read(), 'utf-8')
+
+    def remove(self):
+        if self.exists():
+            self._object.delete()
+
+    def expanduser(self) -> 'BlackfynnPath':
+        return self
+
+    def abspath(self) -> 'BlackfynnPath':
+        return self
+
+    def walk(self) -> List['BlackfynnPath']:
+        if not self.is_dir():
+            return None
+        files = []
+        queue = [(self._object, self._pathstr)]
+        while len(queue) > 0:
+            root, path = queue.pop()
+            for item in root.items:
+                item_path = os.path.join(path, item.name)
+                if 'Collection' in item.type:
+                    queue.append((item, item_path))
+                else:
+                    files.append(item_path)
+        return [BlackfynnPath(file) for file in files]
+
+    def glob(self, pattern: str) -> List['BlackfynnPath']:
+        regex_text = '('
+        for char in pattern:
+            if char == '*':
+                regex_text += '[^/]*'
+            elif char == '?':
+                regex_text += '.'
+            else:
+                regex_text += re.escape(char)
+        regex_text += ')'
+        regex = re.compile(regex_text)
+        files = self.walk()
+        seen = set()
+        return [p for f in files
+                for m in [regex.match(str(f))] if m
+                for p in [m.group(0)] if not (p in seen or seen.add(p))]
+
+    def ls(self) -> List['BlackfynnPath']:
+        if not self.is_dir():
+            return None
+        files = []
+        for item in self._object.items:
+            if hasattr(item, 'sources'):
+                extension = Path(item.sources[0].s3_key).extension
+                files.append(self.join(item.name + extension))
+            else:
+                files.append(self.join(item.name))
+        return files
+
+    def with_suffix(self, suffix) -> 'BlackfynnPath':
+        return BlackfynnPath(self._pathstr + suffix)
+
+    def _write(self, contents, mode):
+        if self.is_dir():
+            return 0
+        if self.exists():
+            self._object.delete()
+        with TemporaryDirectory() as tmp:
+            path = '{dir}/{name}{ext}'.format(
+                dir=tmp,
+                name=self.stem,
+                ext=self.extension
+            )
+            with open(path, mode) as f:
+                f.write(contents)
+            parent_dir = BlackfynnPath(self._pathstr[:self._pathstr.rfind('/')])
+            data = parent_dir._object.upload(path)
+            bf = Blackfynn(self._profile)
+            self._object = bf.get(data[0][0]['package']['content']['id'])
+
+        return len(contents)
+
+    def _read(self):
+        if not self.is_file():
+            return
+        url = self._object.sources[0].url
+        response = urllib.request.urlopen(url)
+        return response.read()
+
+
 class S3Path(AbstractPath, RemotePath):
     """ Wrapper around `s3fs.S3FileSystem`  """
 
@@ -330,7 +553,8 @@ class Path(AbstractPath, os.PathLike):
     """ Represents a generic path object """
     location_class_map = {
         "local": LocalPath,
-        "s3": S3Path
+        "s3": S3Path,
+        "bf": BlackfynnPath
     }
 
     def __init__(self, path: str, **kwargs) -> None:
@@ -348,7 +572,7 @@ class Path(AbstractPath, os.PathLike):
         if self._location not in self.location_class_map:
             raise UnsupportedPathTypeException(
                 "inferred location is not supported")
-        self._impl: Union[AbstractPath, LocalPath, S3Path] = (
+        self._impl: Union[AbstractPath, LocalPath, S3Path, BlackfynnPath] = (
             self.location_class_map[self._location](  # type: ignore
                 path, **kwargs))
 
@@ -547,6 +771,8 @@ def determine_output_location(abspath: str) -> str:
     """
     if abspath.startswith("s3"):
         return "s3"
+    elif abspath.startswith("bf"):
+        return "bf"
     return "local"
 
 
@@ -591,3 +817,14 @@ def copy_local_s3(src: LocalPath, dest: S3Path, **kwargs):
 def copy_s3_s3(src: S3Path, dest: S3Path, **kwargs):
     s3fs = S3FileSystem(anon=False)
     s3fs.copy(str(src), str(dest), **kwargs)
+
+
+def _get_collection_by_name(base, name):
+    for item in base.items:
+        if item.type == 'Collection' and item.name == name:
+            return item
+
+def _get_package_by_name(base, name):
+    for item in base.items:
+        if item.type != 'Collection' and item.name == name:
+            return item
