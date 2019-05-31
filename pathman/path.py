@@ -375,7 +375,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 else:
                     extension = None
                     if hasattr(item, 'sources'):
-                        if len(item.sources) > 0:
+                        if len(item.sources) > 1:
                             raise RuntimeError(
                                 "{} has too many sources").format(item)
                         extension = Path(item.sources[0].s3_key).extension
@@ -408,7 +408,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
             ext = None
             if hasattr(item, 'sources'):
                 ext = Path(item.sources[0].s3_key).extension
-                if len(item.sources) > 0:
+                if len(item.sources) > 1:
                     raise RuntimeError("{} has too many sources").format(item)
             files.append(self.join(item.name + (ext if ext else '')))
         return files
@@ -440,6 +440,8 @@ class BlackfynnPath(AbstractPath, RemotePath):
     def _read(self):
         if not self.is_file():
             return
+        if len(self._object.sources) > 1:
+            raise RuntimeError("{} has too many sources").format(self._object)
         url = self._object.sources[0].url
         response = urllib.request.urlopen(url)
         return response.read()
