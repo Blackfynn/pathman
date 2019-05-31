@@ -226,7 +226,8 @@ class BlackfynnPath(AbstractPath, RemotePath):
         else:
             self._extension = ''
         if dataset is not None:
-            self._pathstr = 'bf://' + os.path.join(dataset, path[len('bf://'):])
+            self._pathstr = 'bf://' + \
+                os.path.join(dataset, path[len('bf://'):])
         else:
             self._pathstr = path
             dataset = self.dataset
@@ -372,7 +373,13 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 if 'Collection' in item.type:
                     queue.append((item, item_path))
                 else:
-                    files.append(item_path)
+                    extension = None
+                    if hasattr(item, 'sources'):
+                        if len(item.sources) > 0:
+                            raise RuntimeError(
+                                "{} has too many sources").format(item)
+                        extension = Path(item.sources[0].s3_key).extension
+                    files.append(item_path + (extension if extension else ''))
         return [BlackfynnPath(file) for file in files]
 
     def glob(self, pattern: str) -> List['BlackfynnPath']:
@@ -388,20 +395,22 @@ class BlackfynnPath(AbstractPath, RemotePath):
         regex = re.compile(regex_text)
         files = self.walk()
         seen = set()
-        return [p for f in files
-                for m in [regex.match(str(f))] if m
-                for p in [m.group(0)] if not (p in seen or seen.add(p))]
+        return [file for file in files
+                for match in [regex.match(file.path)] if match
+                for path in [match.group(0)]
+                if not (path in seen or seen.add(path))]
 
     def ls(self) -> List['BlackfynnPath']:
         if not self.is_dir():
             return None
         files = []
         for item in self._object.items:
+            ext = None
             if hasattr(item, 'sources'):
-                extension = Path(item.sources[0].s3_key).extension
-                files.append(self.join(item.name + extension))
-            else:
-                files.append(self.join(item.name))
+                ext = Path(item.sources[0].s3_key).extension
+                if len(item.sources) > 0:
+                    raise RuntimeError("{} has too many sources").format(item)
+            files.append(self.join(item.name + (ext if ext else '')))
         return files
 
     def with_suffix(self, suffix) -> 'BlackfynnPath':
@@ -420,7 +429,8 @@ class BlackfynnPath(AbstractPath, RemotePath):
             )
             with open(path, mode) as f:
                 f.write(contents)
-            parent_dir = BlackfynnPath(self._pathstr[:self._pathstr.rfind('/')])
+            parent_dir = BlackfynnPath(
+                self._pathstr[:self._pathstr.rfind('/')])
             data = parent_dir._object.upload(path)
             bf = Blackfynn(self._profile)
             self._object = bf.get(data[0][0]['package']['content']['id'])
@@ -823,6 +833,7 @@ def _get_collection_by_name(base, name):
     for item in base.items:
         if item.type == 'Collection' and item.name == name:
             return item
+
 
 def _get_package_by_name(base, name):
     for item in base.items:

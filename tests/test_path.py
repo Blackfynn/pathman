@@ -315,6 +315,21 @@ class TestBlackfynnPath(object):
         for file in files:
             assert str(file) in expectations
 
+    def test_walk(self):
+        path = BlackfynnPath("bf://", self.ds.name)
+        files = path.walk()
+        assert len(files) == 2
+
+    @pytest.mark.parametrize("pattern, expected_length", [
+        ("*.txt", 1),
+        ("*.*", 2),
+        ("*/*.*", 0)
+    ])
+    def test_glob(self, pattern, expected_length):
+        path = BlackfynnPath("bf://", self.ds.name)
+        files = path.glob(pattern)
+        assert len(files) == expected_length
+
     def test_mkdir(self):
         path = BlackfynnPath("bf://folder/test_mkdir", self.ds.name)
         assert path.exists() == False
