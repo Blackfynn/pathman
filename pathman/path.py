@@ -395,7 +395,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         regex = re.compile(regex_text)
         files = self.walk()
         seen = set()
-        return [file for file in files
+        return [_file for _file in files
                 for match in [regex.match(file.path)] if match
                 for path in [match.group(0)]
                 if not (path in seen or seen.add(path))]
