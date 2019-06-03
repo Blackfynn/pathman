@@ -9,6 +9,7 @@ from pathman.s3 import S3Path
 from pathman.local import LocalPath
 from pathman.bf import BlackfynnPath
 from pathman.abstract import AbstractPath, RemotePath
+from pathman.utils import is_file
 
 
 class Path(AbstractPath, os.PathLike):

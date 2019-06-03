@@ -8,8 +8,9 @@ from tempfile import TemporaryDirectory
 from blackfynn import Blackfynn
 import urllib
 
-from pathman.base import is_file, determine_output_location, \
+from pathman.base import Path, determine_output_location, \
     copy_local_s3, copy
+from pathman.utils import is_file
 from pathman.local import LocalPath
 from pathman.s3 import S3Path
 from pathman.bf import BlackfynnPath
@@ -275,7 +276,9 @@ class TestBlackfynnPath(object):
 
     def test_initialize(self):
         path = BlackfynnPath("bf://folder/subfolder/file.txt", self.ds.name)
-        assert str(path) == "bf://{}/folder/subfolder/file".format(self.ds.name)
+        assert str(path) == "bf://{ds}/folder/subfolder/file".format(
+            ds=self.ds.name
+        )
         assert path.dataset == self.ds.name
         assert path._profile == "default"
         assert path._extension == ".txt"

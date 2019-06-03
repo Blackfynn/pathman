@@ -175,7 +175,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                         if len(item.sources) > 1:
                             logging.warning(
                                 "{} has too many sources".format(item))
-                        extension = Path(item.sources[0].s3_key).extension
+                        extension = Path(item.sources[0].s3_key).suffix
                     files.append(item_path + (extension if extension else ''))
         return [BlackfynnPath(file) for file in files]
 
@@ -205,7 +205,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         for item in self._bf_object.items:
             ext = None
             if hasattr(item, 'sources'):
-                ext = Path(item.sources[0].s3_key).extension
+                ext = Path(item.sources[0].s3_key).suffix
                 if len(item.sources) > 1:
                     logging.warning("{} has too many sources".format(item))
             files.append(self.join(item.name + (ext if ext else '')))
