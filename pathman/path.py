@@ -221,6 +221,8 @@ class BlackfynnPath(AbstractPath, RemotePath):
     """ Representation of a path on the Blackfynn platform """
 
     def __init__(self, path: str, dataset=None, profile='default', **kwargs):
+        if not path.startswith('bf://'):
+            raise ValueError('Blackfynn paths must begin with bf://')
         if '.' in path:
             self._extension = path[path.rfind('.'):]
             path = path[:path.rfind('.')]
@@ -232,14 +234,14 @@ class BlackfynnPath(AbstractPath, RemotePath):
         else:
             self._pathstr = path
             dataset = self.dataset
-        self._profile = 'default' if profile is None else profile
+        self._profile = profile
         bf = Blackfynn(self._profile)
-        tokens = self.parts[1:]
         root = None
         try:
             root = bf.get_dataset(dataset)
         except:
             raise FileNotFoundError("Dataset {} was not found".format(dataset))
+        tokens = self.parts[2:]
         for token in tokens:
             col = _get_collection_by_name(root, token)
             if col is None and token == tokens[-1]:
@@ -248,7 +250,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 root = col
             if root is None:
                 break
-        self._object = root
+        self._bf_object = root
 
     def __str__(self) -> str:
         return self._pathstr
@@ -268,15 +270,15 @@ class BlackfynnPath(AbstractPath, RemotePath):
 
     @property
     def dataset(self) -> str:
-        return self.parts[0]
+        return self.parts[1]
 
     @property
     def path(self):
-        return '/'.join(self.parts[1:]) + self.extension
+        return '/'.join(self.parts[2:]) + self.extension
 
     @property
     def parts(self):
-        parts = self._pathstr.replace("bf://", "").split("/")
+        parts = self._pathstr.split("/")
         return [part for part in parts if part not in [""]]
 
     @property
@@ -284,7 +286,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         return self.parts[-1]
 
     def exists(self) -> bool:
-        return self._object is not None and self._object.exists
+        return self._bf_object is not None and self._bf_object.exists
 
     def touch(self, exist_ok=True, **kwargs):
         if self.exists():
@@ -295,7 +297,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         self.write_text("")
 
     def is_dir(self) -> bool:
-        return self.exists() and hasattr(self._object, 'upload')
+        return self.exists() and hasattr(self._bf_object, 'upload')
 
     def is_file(self) -> bool:
         return self.exists() and not self.is_dir()
@@ -308,14 +310,14 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 raise FileExistsError('Can\'t mkdir {}'.format(self))
 
         bf = Blackfynn(self._profile)
-        tokens = self.parts
+        tokens = self.parts[1:]
         root = bf.get_dataset(tokens.pop(0))
         for token in tokens:
             prev_root = root
             root = _get_collection_by_name(root, token)
             if root is None:
                 if token != tokens[-1]:  # the missing token is not at the end
-                    if parents == False:
+                    if parents is False:
                         raise FileNotFoundError(
                             'Missing directory {dir} in {path}'.format(
                                 dir=token,
@@ -324,11 +326,11 @@ class BlackfynnPath(AbstractPath, RemotePath):
                     else:
                         root = prev_root.create_collection(token)
                 else:
-                    self._object = prev_root.create_collection(token)
+                    self._bf_object = prev_root.create_collection(token)
 
     def rmdir(self, **kwargs):
         if self.is_dir():
-            self._object.delete()
+            self._bf_object.delete()
 
     def join(self, *pathsegments: List[str]) -> 'BlackfynnPath':
         joined = os.path.join(self._pathstr, *pathsegments)
@@ -351,7 +353,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
 
     def remove(self):
         if self.exists():
-            self._object.delete()
+            self._bf_object.delete()
 
     def expanduser(self) -> 'BlackfynnPath':
         return self
@@ -363,13 +365,13 @@ class BlackfynnPath(AbstractPath, RemotePath):
         if not self.is_dir():
             return None
         files = []
-        queue = [(self._object, self._pathstr)]
-        while len(queue) > 0:
-            root, path = queue.pop()
+        stack = [(self._bf_object, self._pathstr)]
+        while len(stack) > 0:
+            root, path = stack.pop()
             for item in root.items:
                 item_path = os.path.join(path, item.name)
                 if 'Collection' in item.type:
-                    queue.append((item, item_path))
+                    stack.append((item, item_path))
                 else:
                     extension = None
                     if hasattr(item, 'sources'):
@@ -402,7 +404,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         if not self.is_dir():
             return None
         files = []
-        for item in self._object.items:
+        for item in self._bf_object.items:
             ext = None
             if hasattr(item, 'sources'):
                 ext = Path(item.sources[0].s3_key).extension
@@ -415,7 +417,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         return BlackfynnPath(self._pathstr + suffix)
 
     def _write(self, contents, mode):
-        """ 
+        """
         Writes the specified `contents` to this BlackfynnPath. If this object
         references a directory, then nothing will be written, and this method
         will return 0. Appending to an existing file is not supported, and will
@@ -424,7 +426,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         Parameters
         ----------
         contents:
-            The contents to be written to the platform. Either bytes or a string
+            The contents to be written. Either bytes or a string.
         mode:
             The IO mode to use when writting. Append is not supported.
 
@@ -434,7 +436,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         if self.is_dir():
             return 0
         if self.exists():
-            self._object.delete()
+            self._bf_object.delete()
         with TemporaryDirectory() as tmp:
             path = '{dir}/{name}{ext}'.format(
                 dir=tmp,
@@ -445,18 +447,18 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 f.write(contents)
             parent_dir = BlackfynnPath(
                 self._pathstr[:self._pathstr.rfind('/')])
-            data = parent_dir._object.upload(path)
+            data = parent_dir._bf_object.upload(path)
             bf = Blackfynn(self._profile)
-            self._object = bf.get(data[0][0]['package']['content']['id'])
+            self._bf_object = bf.get(data[0][0]['package']['content']['id'])
 
         return len(contents)
 
     def _read(self):
         if not self.is_file():
             return
-        if len(self._object.sources) > 1:
-            raise RuntimeError("{} has too many sources".format(self._object))
-        url = self._object.sources[0].url
+        if len(self._bf_object.sources) > 1:
+            logging.warning("{} has too many sources".format(self._bf_object))
+        url = self._bf_object.sources[0].url
         response = requests.get(url)
         # If the response has an error status, raise an appropriate Exception
         response.raise_for_status()
