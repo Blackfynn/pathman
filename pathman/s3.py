@@ -1,4 +1,8 @@
-from base import AbstractPath, RemotePath
+from pathman.abstract import AbstractPath, RemotePath
+from typing import List
+from pathlib import Path as PurePath
+from s3fs import S3FileSystem  # type: ignore
+import os
 
 
 class S3Path(AbstractPath, RemotePath):
@@ -113,3 +117,22 @@ class S3Path(AbstractPath, RemotePath):
         tokens = self._pathstr.split("/")
         tokens = [t for t in tokens if t not in [""]]
         return tokens
+
+
+def is_file(abspath: str) -> bool:
+    """ Determines if the path is a file
+
+    Parameters
+    ----------
+    abspath: str
+        Path to inspect
+
+    Returns
+    -------
+    bool: True if inspected path appears to be a file, otherwise False
+    """
+    # split into path + extension. assume no extension means a directory
+    path_segments = os.path.splitext(abspath)
+    if path_segments[-1] == "":
+        return False
+    return True

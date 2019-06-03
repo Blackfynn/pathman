@@ -1,123 +1,14 @@
 """ Module for abstracting over local/remote file paths """
 import os
 import boto3  # type: ignore
-import shutil
 from typing import List, Union, no_type_check
-from abc import ABC, abstractmethod, abstractproperty
-from pathlib import Path as PathLibPath, PurePath
 from pathman.exc import UnsupportedPathTypeException, UnsupportedCopyOperation
 from s3fs import S3FileSystem  # type: ignore
 
-from s3 import S3Path
-from local import LocalPath
-
-
-class AbstractPath(ABC):
-    """ Defines the interface for all Path-like objects """
-
-    @abstractproperty
-    def extension(self):
-        pass
-
-    @abstractmethod
-    def exists(self):
-        pass
-
-    @abstractmethod
-    def touch(self):
-        pass
-
-    @abstractmethod
-    def is_dir(self):
-        pass
-
-    @abstractmethod
-    def is_file(self):
-        pass
-
-    @abstractmethod
-    def mkdir(self):
-        pass
-
-    @abstractmethod
-    def rmdir(self, recursive=False):
-        pass
-
-    @abstractmethod
-    def join(self, *pathsegments: str):
-        pass
-
-    @abstractmethod
-    def open(self, mode="r", **kwargs):
-        pass
-
-    @abstractmethod
-    def write_bytes(self, contents, **kwargs):
-        pass
-
-    @abstractmethod
-    def write_text(self, contents, **kwargs):
-        pass
-
-    @abstractmethod
-    def read_bytes(self, **kwargs):
-        pass
-
-    @abstractmethod
-    def read_text(self, **kwargs):
-        pass
-
-    @abstractmethod
-    def remove(self):
-        pass
-
-    @abstractmethod
-    def expanduser(self):
-        pass
-
-    @abstractmethod
-    def abspath(self):
-        pass
-
-    @abstractmethod
-    def walk(self):
-        pass
-
-    @abstractmethod
-    def ls(self):
-        pass
-
-    @abstractmethod
-    def __truediv__(self, key):
-        pass
-
-    @abstractmethod
-    def glob(self, _glob):
-        pass
-
-    @abstractmethod
-    def with_suffix(self, suffix):
-        pass
-
-    @abstractproperty
-    def stem(self):
-        pass
-
-    @abstractproperty
-    def parts(self):
-        pass
-
-
-class RemotePath(object):
-    """ A mixin that represents any non-local path
-
-    Notes
-    -----
-        This can be used to add additional methods to remote files
-        that are specific to managing remote resources. This will
-        also allow us to unify the API for managing remote resources
-        across cloud providers should that be necessary in the future.
-    """
+from pathman.s3 import S3Path
+from pathman.local import LocalPath
+from pathman.bf import BlackfynnPath
+from pathman.abstract import AbstractPath, RemotePath
 
 
 class Path(AbstractPath, os.PathLike):
@@ -139,11 +30,11 @@ class Path(AbstractPath, os.PathLike):
         path = str(path)
         self._pathstr: str = path
         self._isfile: bool = is_file(path)
-        self._location:str = determine_output_location(path)
+        self._location: str = determine_output_location(path)
         if self._location not in self.location_class_map:
             raise UnsupportedPathTypeException(
                 "inferred location is not supported")
-        self._impl:Union[AbstractPath, LocalPath, S3Path, BlackfynnPath] = (
+        self._impl: Union[AbstractPath, LocalPath, S3Path, BlackfynnPath] = (
             self.location_class_map[self._location](  # type: ignore
                 path, **kwargs))
 
@@ -346,25 +237,6 @@ def determine_output_location(abspath: str) -> str:
     elif abspath.startswith("bf"):
         return "bf"
     return "local"
-
-
-def is_file(abspath: str) -> bool:
-    """ Determines if the path is a file
-
-    Parameters
-    ----------
-    abspath: str
-        Path to inspect
-
-    Returns
-    -------
-    bool: True if inspected path appears to be a file, otherwise False
-    """
-    # split into path + extension. assume no extension means a directory
-    path_segments = os.path.splitext(abspath)
-    if path_segments[-1] == "":
-        return False
-    return True
 
 
 @no_type_check

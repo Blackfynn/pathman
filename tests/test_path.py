@@ -8,8 +8,11 @@ from tempfile import TemporaryDirectory
 from blackfynn import Blackfynn
 import urllib
 
-from pathman.path import is_file, determine_output_location, \
-    LocalPath, S3Path, Path, copy_local_s3, copy, BlackfynnPath
+from pathman.base import is_file, determine_output_location, \
+    copy_local_s3, copy
+from pathman.local import LocalPath
+from pathman.s3 import S3Path
+from pathman.bf import BlackfynnPath
 
 
 output = functools.partial(resource_filename, 'tests.output')

@@ -1,3 +1,3 @@
-from pathman.path import Path, copy
+from pathman.base import *
 
 __version__ = "0.1.1"

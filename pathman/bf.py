@@ -3,12 +3,14 @@ import re
 import logging
 import os
 from typing import List
-# from base import AbstractPath, RemotePath
+from pathman.abstract import AbstractPath, RemotePath
+from pathlib import Path
 from tempfile import TemporaryDirectory, NamedTemporaryFile
-from blackfynn import Blackfynn
+from blackfynn import Blackfynn  # type: ignore
+from blackfynn.models import BaseDataNode  # type: ignore
 
-#AbstractPath, RemotePath
-class BlackfynnPath():
+
+class BlackfynnPath(AbstractPath, RemotePath):
     """ Representation of a path on the Blackfynn platform """
 
     def __init__(self, path: str, dataset=None, profile='default', **kwargs):
@@ -32,7 +34,9 @@ class BlackfynnPath():
         root = None
         try:
             root = bf.get_dataset(dataset)
-        except:
+        except Exception:
+            # When the API doesn't find a dataset, it raises a generic
+            # exception, which is what we have to catch.
             raise FileNotFoundError("Dataset {} was not found".format(dataset))
         tokens = self.parts[2:]
         for token in tokens:
@@ -43,7 +47,7 @@ class BlackfynnPath():
                 root = col
             if root is None:
                 break
-        self._bf_object = root
+        self._bf_object: BaseDataNode = root
 
     def __str__(self) -> str:
         return self._pathstr
@@ -125,7 +129,7 @@ class BlackfynnPath():
         if self.is_dir():
             self._bf_object.delete()
 
-    def join(self, *pathsegments: List[str]) -> 'BlackfynnPath':
+    def join(self, *pathsegments: str) -> 'BlackfynnPath':
         joined = os.path.join(self._pathstr, *pathsegments)
         return BlackfynnPath(joined)
 
@@ -138,10 +142,10 @@ class BlackfynnPath():
     def write_text(self, contents, **kwargs):
         return self._write(contents, 'w')
 
-    def read_bytes(self):
+    def read_bytes(self, **kwargs):
         return self._read().content
 
-    def read_text(self):
+    def read_text(self, **kwargs):
         return self._read().text
 
     def remove(self):
@@ -156,7 +160,7 @@ class BlackfynnPath():
 
     def walk(self) -> List['BlackfynnPath']:
         if not self.is_dir():
-            return None
+            return []
         files = []
         stack = [(self._bf_object, self._pathstr)]
         while len(stack) > 0:
@@ -187,15 +191,16 @@ class BlackfynnPath():
         regex_text += ')'
         regex = re.compile(regex_text)
         files = self.walk()
-        seen = set()
+        seen: set = set()
+
         return [_file for _file in files
-                for match in [regex.match(file.path)] if match
+                for match in [regex.match(_file.path)] if match
                 for path in [match.group(0)]
-                if not (path in seen or seen.add(path))]
+                if not (path in seen or seen.add(path))]  # type: ignore
 
     def ls(self) -> List['BlackfynnPath']:
         if not self.is_dir():
-            return None
+            return []
         files = []
         for item in self._bf_object.items:
             ext = None
