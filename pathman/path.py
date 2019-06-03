@@ -3,7 +3,8 @@ import os
 import boto3  # type: ignore
 import shutil
 import re
-import urllib
+import requests
+import logging
 from typing import List, Union, no_type_check
 from abc import ABC, abstractmethod, abstractproperty
 from pathlib import Path as PathLibPath, PurePath
@@ -240,10 +241,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         except:
             raise FileNotFoundError("Dataset {} was not found".format(dataset))
         for token in tokens:
-            try:
-                col = _get_collection_by_name(root, token)
-            except:
-                print(self._pathstr)
+            col = _get_collection_by_name(root, token)
             if col is None and token == tokens[-1]:
                 root = _get_package_by_name(root, token)
             else:
@@ -318,7 +316,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
             if root is None:
                 if token != tokens[-1]:  # the missing token is not at the end
                     if parents == False:
-                        raise FileExistsError(
+                        raise FileNotFoundError(
                             'Missing directory {dir} in {path}'.format(
                                 dir=token,
                                 path=self._pathstr
@@ -346,10 +344,10 @@ class BlackfynnPath(AbstractPath, RemotePath):
         return self._write(contents, 'w')
 
     def read_bytes(self):
-        return self._read()
+        return self._read().content
 
     def read_text(self):
-        return str(self._read(), 'utf-8')
+        return self._read().text
 
     def remove(self):
         if self.exists():
@@ -376,8 +374,8 @@ class BlackfynnPath(AbstractPath, RemotePath):
                     extension = None
                     if hasattr(item, 'sources'):
                         if len(item.sources) > 1:
-                            raise RuntimeError(
-                                "{} has too many sources").format(item)
+                            logging.warning(
+                                "{} has too many sources".format(item))
                         extension = Path(item.sources[0].s3_key).extension
                     files.append(item_path + (extension if extension else ''))
         return [BlackfynnPath(file) for file in files]
@@ -409,7 +407,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
             if hasattr(item, 'sources'):
                 ext = Path(item.sources[0].s3_key).extension
                 if len(item.sources) > 1:
-                    raise RuntimeError("{} has too many sources").format(item)
+                    logging.warning("{} has too many sources".format(item))
             files.append(self.join(item.name + (ext if ext else '')))
         return files
 
@@ -417,6 +415,22 @@ class BlackfynnPath(AbstractPath, RemotePath):
         return BlackfynnPath(self._pathstr + suffix)
 
     def _write(self, contents, mode):
+        """ 
+        Writes the specified `contents` to this BlackfynnPath. If this object
+        references a directory, then nothing will be written, and this method
+        will return 0. Appending to an existing file is not supported, and will
+        raise an IOError.
+
+        Parameters
+        ----------
+        contents:
+            The contents to be written to the platform. Either bytes or a string
+        mode:
+            The IO mode to use when writting. Append is not supported.
+
+        """
+        if mode.startswith('a'):
+            raise IOError('Append is not supported for Blackfynn paths')
         if self.is_dir():
             return 0
         if self.exists():
@@ -441,10 +455,12 @@ class BlackfynnPath(AbstractPath, RemotePath):
         if not self.is_file():
             return
         if len(self._object.sources) > 1:
-            raise RuntimeError("{} has too many sources").format(self._object)
+            raise RuntimeError("{} has too many sources".format(self._object))
         url = self._object.sources[0].url
-        response = urllib.request.urlopen(url)
-        return response.read()
+        response = requests.get(url)
+        # If the response has an error status, raise an appropriate Exception
+        response.raise_for_status()
+        return response
 
 
 class S3Path(AbstractPath, RemotePath):
