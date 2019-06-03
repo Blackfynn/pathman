@@ -278,38 +278,39 @@ class TestBlackfynnPath(object):
         assert path._extension == ".txt"
 
     @pytest.mark.parametrize("path,expectation", [
-        ('test-pathman/', True),
-        ('test-pathman/folder/', True),
-        ('test-pathman/folder/subfolder/', False),
-        ('test-pathman/file.txt', True),
-        ('test-pathman/table.csv', True)
+        ('bf://test-pathman/', True),
+        ('bf://test-pathman/folder/', True),
+        ('bf://test-pathman/folder/subfolder/', False),
+        ('bf://test-pathman/file.txt', True),
+        ('bf://test-pathman/table.csv', True)
     ])
     def test_exists(self, path, expectation):
         assert BlackfynnPath(path).exists() == expectation
 
     @pytest.mark.parametrize("path,expectation", [
-        ('test-pathman/', True),
-        ('test-pathman/folder/', True),
-        ('test-pathman/folder/subfolder/', False),
-        ('test-pathman/file.txt', False),
-        ('test-pathman/table.csv', False)
+        ('bf://test-pathman/', True),
+        ('bf://test-pathman/folder/', True),
+        ('bf://test-pathman/folder/subfolder/', False),
+        ('bf://test-pathman/file.txt', False),
+        ('bf://test-pathman/table.csv', False)
     ])
     def test_is_dir(self, path, expectation):
         assert BlackfynnPath(path).is_dir() == expectation
 
     @pytest.mark.parametrize("path,expectation", [
-        ('test-pathman/', False),
-        ('test-pathman/folder/', False),
-        ('test-pathman/folder/subfolder/', False),
-        ('test-pathman/file.txt', True),
-        ('test-pathman/table.csv', True)
+        ('bf://test-pathman/', False),
+        ('bf://test-pathman/folder/', False),
+        ('bf://test-pathman/folder/subfolder/', False),
+        ('bf://test-pathman/file.txt', True),
+        ('bf://test-pathman/table.csv', True)
     ])
     def test_is_file(self, path, expectation):
         assert BlackfynnPath(path).is_file() == expectation
 
     def test_ls(self):
-        expectations = ['bf://test-pathman/folder', 
-            'bf://test-pathman/file.txt', 'bf://test-pathman/table.csv']
+        expectations = ['bf://test-pathman/folder',
+                        'bf://test-pathman/file.txt',
+                        'bf://test-pathman/table.csv']
         path = BlackfynnPath("bf://", self.ds.name)
         files = [str(file) + file.extension for file in path.ls()]
         for file in files:
@@ -332,26 +333,26 @@ class TestBlackfynnPath(object):
 
     def test_mkdir(self):
         path = BlackfynnPath("bf://folder/test_mkdir", self.ds.name)
-        assert path.exists() == False
+        assert path.exists() is False
         path.mkdir()
-        assert path.is_dir() == True and path.exists() == True
-        path._object.delete()
-    
+        assert path.is_dir() is True and path.exists() is True
+        path._bf_object.delete()
+
     def test_rmdir(self):
         self.ds.create_collection("test_remove")
         path = BlackfynnPath("bf://test_remove", self.ds.name)
-        assert path.exists() == True and path.is_dir() == True
+        assert path.exists() is True and path.is_dir() is True
         path.rmdir()
-        assert path.exists() == False
+        assert path.exists() is False
 
     def test_write(self):
         path = BlackfynnPath("bf://write.txt", self.ds.name)
         to_write = "Hello, World!"
         path.write_text(to_write)
-        bf = Blackfynn()
-        retrieved = urllib.request.urlopen(path._object.sources[0].url).read()
+        retrieved = urllib.request.urlopen(
+            path._bf_object.sources[0].url).read()
         assert str(retrieved, 'utf-8') == "Hello, World!"
-        path._object.delete()
+        path._bf_object.delete()
 
     def test_read(self):
         path = BlackfynnPath("bf://file.txt", self.ds.name)
@@ -359,18 +360,17 @@ class TestBlackfynnPath(object):
 
     def test_touch(self):
         path = BlackfynnPath("bf://touch.txt", self.ds.name)
-        assert path.exists() == False
+        assert path.exists() is False
         path.touch()
-        assert path.exists() == True and path.is_file() == True
+        assert path.exists() is True and path.is_file() is True
 
     def test_remove(self):
         path = BlackfynnPath("bf://remove.txt", self.ds.name)
-        assert path.exists() == False
+        assert path.exists() is False
         path.touch()
-        assert path.exists() == True
+        assert path.exists() is True
         path.remove()
-        assert path.exists() == False
-
+        assert path.exists() is False
 
 
 class TestS3Path(object):
