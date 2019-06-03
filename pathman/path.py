@@ -799,6 +799,7 @@ def determine_output_location(abspath: str) -> str:
     -----
     Possible output locations include:
         - s3
+        - blackfynn
         - local
     """
     if abspath.startswith("s3"):
