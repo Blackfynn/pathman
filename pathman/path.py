@@ -228,12 +228,14 @@ class BlackfynnPath(AbstractPath, RemotePath):
             path = path[:path.rfind('.')]
         else:
             self._extension = ''
-        if dataset is not None:
+        if dataset is None:
+            self._pathstr = path
+            if len(parts) == 0:
+                raise ValueError("Must specify a dataset")
+            dataset = self.dataset
+        else:
             self._pathstr = 'bf://' + \
                 os.path.join(dataset, path[len('bf://'):])
-        else:
-            self._pathstr = path
-            dataset = self.dataset
         self._profile = profile
         bf = Blackfynn(self._profile)
         root = None
