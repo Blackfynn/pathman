@@ -10,15 +10,11 @@ from pathman.local import LocalPath
 from pathman.bf import BlackfynnPath
 from pathman.abstract import AbstractPath, RemotePath
 from pathman.utils import is_file
+from pathman.pathlike import PathLike
 
 
 class Path(AbstractPath, os.PathLike):
     """ Represents a generic path object """
-    location_class_map = {
-        "local": LocalPath,
-        "s3": S3Path,
-        "bf": BlackfynnPath
-    }
 
     def __init__(self, path: str, **kwargs) -> None:
         """ Constructor for a new Path
@@ -32,12 +28,12 @@ class Path(AbstractPath, os.PathLike):
         self._pathstr: str = path
         self._isfile: bool = is_file(path)
         self._location: str = determine_output_location(path)
-        if self._location not in self.location_class_map:
+        if self._location not in PathLike.classes:
             raise UnsupportedPathTypeException(
                 "inferred location is not supported")
         self._impl: Union[AbstractPath, LocalPath, S3Path, BlackfynnPath] = (
-            self.location_class_map[self._location](  # type: ignore
-                path, **kwargs))
+            PathLike.classes[self._location](path, **kwargs)  # type: ignore
+        )
 
     def __fspath__(self) -> str:
         return self._pathstr
@@ -228,15 +224,12 @@ def determine_output_location(abspath: str) -> str:
 
     Notes
     -----
-    Possible output locations include:
-        - s3
-        - blackfynn
-        - local
+    Compares the beginning of `abspath` to all of the regisered Path classes.
+    If no match is found, default to "local"
     """
-    if abspath.startswith("s3"):
-        return "s3"
-    elif abspath.startswith("bf"):
-        return "bf"
+    for key in PathLike.classes:
+        if abspath.startswith(key):
+            return key
     return "local"
 
 

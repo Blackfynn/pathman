@@ -1,4 +1,5 @@
 from pathman.abstract import AbstractPath
+from pathman.pathlike import PathLike
 
 from typing import List
 from pathlib import Path as PathLibPath
@@ -6,6 +7,7 @@ import shutil
 import os
 
 
+@PathLike(prefix='local')
 class LocalPath(AbstractPath):
     """ Wrapper around `pathlib.Path` """
 

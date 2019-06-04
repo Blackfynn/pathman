@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from blackfynn import Blackfynn
 import urllib
 
-from pathman.base import Path, determine_output_location, \
+from pathman.path import Path, determine_output_location, \
     copy_local_s3, copy
 from pathman.utils import is_file
 from pathman.local import LocalPath
