@@ -24,7 +24,7 @@ jobs:
       script: 
        - flake8 pathman/
        - mypy pathman/
-       - pytest
+       - pytest --integration
 
     - stage: release
       if: tag IS present
