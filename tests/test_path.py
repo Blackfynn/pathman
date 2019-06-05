@@ -1,5 +1,6 @@
 import os
 import pytest
+import mock
 import boto3
 import functools
 from moto import mock_s3
@@ -21,6 +22,17 @@ data = functools.partial(resource_filename, 'tests.resources')
 
 real_bucket = "s3://test-bucket"
 real_file = "s3://test-bucket/test-key/test_file.txt"
+
+
+class MockBlackfynn(Blackfynn):
+
+    def __init__(self, profile=None, *args, **kwargs):
+        token = os.environ.get('BLACKFYNN_API_TOKEN', None)
+        secret = os.environ.get('BLACKFYNN_API_SECRET', None)
+        if token and secret:
+            super().__init__(api_token=token, api_secret=secret)
+        else:
+            super().__init__(profile)
 
 
 def local_file():
@@ -251,12 +263,18 @@ class TestLocalPath(object):
         assert str(path.join(*segments)) == os.path.join("", *segments)
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
+@mock.patch('pathman.path.Blackfynn', new=MockBlackfynn)
 class TestBlackfynnPath(object):
 
     @classmethod
     def setup_class(cls):
         bf = Blackfynn()
+        try:
+            old_ds = bf.get_dataset('test-pathman')
+            bf._api.datasets.delete(old_ds)
+        except Exception:
+            pass
         cls.ds = bf.create_dataset('test-pathman')
         cls.ds.create_collection("folder")
         with TemporaryDirectory() as tmp:

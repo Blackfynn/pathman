@@ -1,8 +1,20 @@
 from abc import ABC, abstractmethod, abstractproperty
 
 
-class AbstractPath(ABC):
+class MetaPath(type, ABC):
+
+    def __new__(cls, name, bases, namespace, **kwargs):
+        result = super().__new__(cls, name, bases, namespace)
+        if 'prefix' in namespace:
+            AbstractPath.paths[namespace['prefix']] = result
+
+        return result
+
+
+class AbstractPath(metaclass=MetaPath):
     """ Defines the interface for all Path-like objects """
+
+    paths = {}
 
     @abstractproperty
     def extension(self):

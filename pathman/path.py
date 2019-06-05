@@ -8,12 +8,15 @@ from s3fs import S3FileSystem  # type: ignore
 from pathman.s3 import S3Path
 from pathman.local import LocalPath
 from pathman.bf import BlackfynnPath
-from pathman.abstract import AbstractPath, RemotePath
+from pathman.abstract import AbstractPath, RemotePath, MetaPath
 from pathman.utils import is_file
-from pathman.pathlike import PathLike
 
 
-class Path(AbstractPath, os.PathLike):
+class MetaPathLike(MetaPath, os.PathLike):
+    pass
+
+
+class Path(metaclass=MetaPathLike):
     """ Represents a generic path object """
 
     def __init__(self, path: str, **kwargs) -> None:
@@ -28,11 +31,11 @@ class Path(AbstractPath, os.PathLike):
         self._pathstr: str = path
         self._isfile: bool = is_file(path)
         self._location: str = determine_output_location(path)
-        if self._location not in PathLike.classes:
+        if self._location not in AbstractPath.paths:
             raise UnsupportedPathTypeException(
                 "inferred location is not supported")
         self._impl: Union[AbstractPath, LocalPath, S3Path, BlackfynnPath] = (
-            PathLike.classes[self._location](path, **kwargs)  # type: ignore
+            AbstractPath.paths[self._location](path, **kwargs)  # type: ignore
         )
 
     def __fspath__(self) -> str:
@@ -227,7 +230,7 @@ def determine_output_location(abspath: str) -> str:
     Compares the beginning of `abspath` to all of the regisered Path classes.
     If no match is found, default to "local"
     """
-    for key in PathLike.classes:
+    for key in AbstractPath.paths:
         if abspath.startswith(key):
             return key
     return "local"

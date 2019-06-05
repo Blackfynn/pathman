@@ -4,16 +4,16 @@ import logging
 import os
 from typing import List
 from pathman.abstract import AbstractPath, RemotePath
-from pathman.pathlike import PathLike
 from pathlib import Path
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 from blackfynn import Blackfynn  # type: ignore
 from blackfynn.models import BaseDataNode  # type: ignore
 
 
-@PathLike(prefix='bf')
 class BlackfynnPath(AbstractPath, RemotePath):
     """ Representation of a path on the Blackfynn platform """
+
+    prefix = 'bf'
 
     def __init__(self, path: str, dataset=None, profile='default', **kwargs):
         if not path.startswith('bf://'):

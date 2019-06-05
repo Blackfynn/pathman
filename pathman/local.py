@@ -7,9 +7,10 @@ import shutil
 import os
 
 
-@PathLike(prefix='local')
 class LocalPath(AbstractPath):
     """ Wrapper around `pathlib.Path` """
+
+    prefix = 'local'
 
     def __init__(self, path: str, **kwargs) -> None:
         self._path = PathLibPath(path)

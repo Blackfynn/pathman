@@ -1,15 +1,15 @@
 from pathman.abstract import AbstractPath, RemotePath
 from pathman.utils import is_file
-from pathman.pathlike import PathLike
 from typing import List
 from pathlib import Path as PurePath
 from s3fs import S3FileSystem  # type: ignore
 import os
 
 
-@PathLike(prefix='s3')
 class S3Path(AbstractPath, RemotePath):
     """ Wrapper around `s3fs.S3FileSystem`  """
+
+    prefix = 's3'
 
     def __init__(self, path: str, **kwargs) -> None:
         self._pathstr = path
