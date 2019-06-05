@@ -1,5 +1,6 @@
 import os
 import pytest
+import mock
 import boto3
 import functools
 from moto import mock_s3
@@ -17,6 +18,21 @@ data = functools.partial(resource_filename, 'tests.resources')
 
 real_bucket = "s3://test-bucket"
 real_file = "s3://test-bucket/test-key/test_file.txt"
+
+
+@mock.patch('pathman.path.Blackfynn')
+def mock_blackfynn(self, mock_bf):
+
+    bf = None
+
+    token = os.environ.get('BLACKFYNN_API_TOKEN', None)
+    secret = os.environ.get('BLACKFYNN_API_SECRET', None)
+    if token and secret:
+        bf = Blackfynn(api_token=token, api_secret=secret)
+    else:
+        bf = Blackfynn()
+
+    mock_bf.return_value = bf
 
 
 def local_file():
@@ -247,7 +263,7 @@ class TestLocalPath(object):
         assert str(path.join(*segments)) == os.path.join("", *segments)
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
 class TestBlackfynnPath(object):
 
     @classmethod
