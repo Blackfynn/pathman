@@ -266,6 +266,11 @@ class TestBlackfynnPath(object):
     @classmethod
     def setup_class(cls):
         bf = Blackfynn()
+        try:
+            old_ds = bf.get_dataset('test-pathman')
+            bf._api.datasets.delete(old_ds)
+        except Exception:
+            pass
         cls.ds = bf.create_dataset('test-pathman')
         cls.ds.create_collection("folder")
         with TemporaryDirectory() as tmp:
