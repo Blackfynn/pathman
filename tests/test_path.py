@@ -20,19 +20,15 @@ real_bucket = "s3://test-bucket"
 real_file = "s3://test-bucket/test-key/test_file.txt"
 
 
-@mock.patch('pathman.path.Blackfynn')
-def mock_blackfynn(self, mock_bf):
+class MockBlackfynn(Blackfynn):
 
-    bf = None
-
-    token = os.environ.get('BLACKFYNN_API_TOKEN', None)
-    secret = os.environ.get('BLACKFYNN_API_SECRET', None)
-    if token and secret:
-        bf = Blackfynn(api_token=token, api_secret=secret)
-    else:
-        bf = Blackfynn()
-
-    mock_bf.return_value = bf
+    def __init__(self, profile=None, *args, **kwargs):
+        token = os.environ.get('BLACKFYNN_API_TOKEN', None)
+        secret = os.environ.get('BLACKFYNN_API_SECRET', None)
+        if token and secret:
+            super().__init__(api_token=token, api_secret=secret)
+        else:
+            super().__init__(profile)
 
 
 def local_file():
@@ -264,6 +260,7 @@ class TestLocalPath(object):
 
 
 @pytest.mark.integration
+@mock.patch('pathman.path.Blackfynn', new=MockBlackfynn)
 class TestBlackfynnPath(object):
 
     @classmethod
