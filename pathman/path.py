@@ -8,11 +8,15 @@ from s3fs import S3FileSystem  # type: ignore
 from pathman.s3 import S3Path
 from pathman.local import LocalPath
 from pathman.bf import BlackfynnPath
-from pathman.abstract import AbstractPath, RemotePath, MetaPath
+from pathman.abstract import AbstractPath, MetaPath
 from pathman.utils import is_file
 
 
 class MetaPathLike(MetaPath, os.PathLike):
+    """
+    Allows `Path` to inherit from `AbstractPath` and `os.PathLike` without
+    interference between their metaclasses.
+    """
     pass
 
 

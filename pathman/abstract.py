@@ -1,7 +1,14 @@
 from abc import ABC, abstractmethod, abstractproperty
+from typing import Dict
 
 
 class MetaPath(type, ABC):
+    """
+    A metaclass for `AbstractPath`. Whenever a class inherits from
+    `AbtractPath`, if it has a `prefix` property, it will be registered
+    in the `AbstractPath.paths` dictionary so that the `Path` constructor
+    can automatically use the correct implementation based on the path string.
+    """
 
     def __new__(cls, name, bases, namespace, **kwargs):
         result = super().__new__(cls, name, bases, namespace)
@@ -14,7 +21,9 @@ class MetaPath(type, ABC):
 class AbstractPath(metaclass=MetaPath):
     """ Defines the interface for all Path-like objects """
 
-    paths = {}
+    # This dict is automatically populated at runtime with all classes
+    # which inherit from AbstractPath and implement a prefix property.
+    paths: Dict[str, 'AbstractPath'] = {}
 
     @abstractproperty
     def extension(self):

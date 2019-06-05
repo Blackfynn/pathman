@@ -5,7 +5,7 @@ import os
 from typing import List
 from pathman.abstract import AbstractPath, RemotePath
 from pathlib import Path
-from tempfile import TemporaryDirectory, NamedTemporaryFile
+from tempfile import TemporaryDirectory
 from blackfynn import Blackfynn  # type: ignore
 from blackfynn.models import BaseDataNode  # type: ignore
 

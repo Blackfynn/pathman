@@ -264,7 +264,7 @@ class TestLocalPath(object):
 
 
 @pytest.mark.integration
-@mock.patch('pathman.path.Blackfynn', new=MockBlackfynn)
+@mock.patch('pathman.bf.Blackfynn', new=MockBlackfynn)
 class TestBlackfynnPath(object):
 
     @classmethod

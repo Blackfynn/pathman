@@ -1,5 +1,4 @@
 from pathman.abstract import AbstractPath
-from pathman.pathlike import PathLike
 
 from typing import List
 from pathlib import Path as PathLibPath
