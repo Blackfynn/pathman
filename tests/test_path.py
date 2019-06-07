@@ -1,6 +1,5 @@
 import os
 import pytest
-import mock
 import boto3
 import functools
 from moto import mock_s3
@@ -48,7 +47,7 @@ class TestPath(object):
         "/some/local/file.txt"
     ])
     def test_initialize_local(self, path):
-        assert isinstance(Path(path)._impl, LocalPath)
+        assert isinstance(Path(path), LocalPath)
 
     @pytest.mark.parametrize("path, expectation", [
         ("/some/local/dir/", ""),
@@ -122,7 +121,7 @@ class TestPath(object):
         ("s3://some/file.txt", "s3://some")
     ])
     def test_dirname(self, file_path, expected_output):
-        assert Path(file_path).dirname() == Path(expected_output)
+        assert Path(file_path).dirname() == expected_output
 
     @pytest.mark.parametrize("file_path, expected", [
         ("./some/relative/dir/", False),

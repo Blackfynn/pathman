@@ -7,7 +7,7 @@ API
 Path
 ====
 
-.. autoclass:: pathman.Path
+.. autoclass:: pathman.AbstractPath
    :members:
 
 .. autofunction:: pathman.path.copy

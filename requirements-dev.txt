@@ -3,3 +3,5 @@ pytest-cov
 moto
 mypy
 flake8
+sphinx
+sphinx-rtd-theme

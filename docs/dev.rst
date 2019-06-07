@@ -28,6 +28,24 @@ Integration tests::
 
     pytest --integration
 
+
+Updating Documentation
+----------------------
+
+Documentation can be generated for local viewing using the ``Makefile`` in
+``pathman/docs/``.
+
+.. code-block:: bash
+
+    make html
+
+Once the docs are built, use a local web server to view them::
+
+    cd pathman/docs/
+    python -m http.server
+
+
+
 Adding new Path implementations
 -------------------------------
 

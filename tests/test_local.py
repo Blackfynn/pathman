@@ -1,7 +1,7 @@
 import pytest
 import os
 from .test_path import local_file, local_dir
-from pathman import LocalPath, Path
+from pathman import LocalPath
 
 
 class TestLocalPath(object):
