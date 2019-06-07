@@ -7,7 +7,6 @@ from s3fs import S3FileSystem  # type: ignore
 
 from pathman.s3 import S3Path
 from pathman.local import LocalPath
-from pathman.bf import BlackfynnPath
 from pathman.abstract import AbstractPath, MetaPath
 from pathman.utils import is_file
 
@@ -38,9 +37,9 @@ class Path(metaclass=MetaPathLike):
                 "inferred location is not supported for {}".format(path))
         result = AbstractPath.paths[location](path, *args, **kwargs)
 
-        result._location: str = location
-        result._pathstr: str = path
-        result._isfile: bool = is_file(path)
+        result._location = location
+        result._pathstr = path
+        result._isfile = is_file(path)
 
         return result
 

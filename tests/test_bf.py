@@ -4,7 +4,7 @@ import os
 import urllib
 from blackfynn import Blackfynn
 from tempfile import TemporaryDirectory
-from pathman import BlackfynnPath
+from pathman.bf import BlackfynnPath
 
 
 class MockBlackfynn(Blackfynn):
