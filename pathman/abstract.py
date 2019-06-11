@@ -89,7 +89,7 @@ class AbstractPath(metaclass=MetaPath):
 
         Returns
         -------
-        file object
+        file object: object
 
         """
         pass
@@ -105,7 +105,7 @@ class AbstractPath(metaclass=MetaPath):
 
         Returns
         -------
-        int: number of bytes written
+        number of bytes written: int
 
         """
         pass
@@ -121,7 +121,7 @@ class AbstractPath(metaclass=MetaPath):
 
         Returns
         -------
-        int: number of characters written
+        number of characters written: int
 
         """
         pass
@@ -176,7 +176,19 @@ class AbstractPath(metaclass=MetaPath):
 
     @abstractmethod
     def glob(self, pattern: str):
-        """ Matches the folders and file in this directory with the """
+        """ Matches the folders and file in this directory with the provided
+        pattern
+
+        Parameters
+        ----------
+        pattern:
+            The pattern to be matched
+
+        Returns
+        -------
+        A list of path objects: ``List[Path]``
+
+        """
         pass
 
     @abstractmethod

@@ -69,6 +69,17 @@ def determine_output_location(abspath: str) -> str:
 
 @no_type_check
 def copy(src: AbstractPath, dest: AbstractPath, **kwargs):
+    """
+    Copies the contents of the source file to the destination.
+    Only supports local \u27A1 s3 and s3 \u27A1 s3.
+
+    Parameters
+    ----------
+    src:
+        The source file to be copied
+    dest:
+        The target destination for the source file
+    """
     if src._location == "local" and dest._location == "s3":
         return copy_local_s3(src, dest, **kwargs)
     elif src._location == "s3" and dest._location == "s3":
