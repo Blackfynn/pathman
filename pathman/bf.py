@@ -16,8 +16,11 @@ class BlackfynnPath(AbstractPath, RemotePath):
     prefix = 'bf'
 
     def __init__(self, path: str, dataset=None, profile='default', **kwargs):
-        if not path.startswith('bf://'):
-            raise ValueError('Blackfynn paths must begin with bf://')
+        prefix = self.prefix + "://"
+
+        if not path.startswith(prefix):
+            raise ValueError('Blackfynn paths must begin with {}'
+                             .format(prefix))
         if '.' in path:
             self._extension = path[path.rfind('.'):]
             path = path[:path.rfind('.')]
@@ -29,8 +32,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 raise ValueError("Must specify a dataset")
             dataset = self.dataset
         else:
-            self._pathstr = 'bf://' + \
-                os.path.join(dataset, path[len('bf://'):])
+            self._pathstr = prefix + os.path.join(dataset, path[len(prefix):])
         self._profile = profile
         bf = Blackfynn(self._profile)
         root = None

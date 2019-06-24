@@ -13,9 +13,14 @@ class MetaPath(type, ABC):
 
     def __new__(cls, name, bases, namespace, **kwargs):
         result = super().__new__(cls, name, bases, namespace)
-        if 'prefix' in namespace:
-            AbstractPath.paths[namespace['prefix']] = result
+        if name == 'AbstractPath' or name == 'Path':
+            return result
+        if 'prefix' not in namespace:
+            raise RuntimeError("{} does not have a prefix".format(name))
+        elif namespace['prefix'] in AbstractPath.paths:
+            raise RuntimeError("Prefix for {} is already in use.".format(name))
 
+        AbstractPath.paths[namespace['prefix']] = result
         return result
 
 
@@ -23,7 +28,7 @@ class AbstractPath(metaclass=MetaPath):
     """ Defines the interface for all Path-like objects """
 
     # This dict is automatically populated at runtime with all classes
-    # which inherit from AbstractPath and implement a prefix property.
+    # that inherit from AbstractPath and implement a prefix property.
     paths: Dict[str, 'AbstractPath'] = {}
 
     @abstractmethod
