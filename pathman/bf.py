@@ -16,6 +16,24 @@ class BlackfynnPath(AbstractPath, RemotePath):
     prefix = 'bf'
 
     def __init__(self, path: str, dataset=None, profile='default', **kwargs):
+        """
+        Initializes a new BlackfynnPath
+
+        Parameters
+        ----------
+            path: str
+                The path to a file or folder on the Blackfynn platform, which
+                must begin with bf://. The dataset is optional as the first
+                component of the path.
+            dataset: str, optional
+                The name of the dataset for this path on the Blackfynn
+                platform. If this parameter is not provided, then the dataset
+                is assumed to be the first component of `path`.
+            profile, str, default='default'
+                The name of the Blackfynn API profile to use when interacting
+                with the platform.
+        """
+
         prefix = self.prefix + "://"
 
         if not path.startswith(prefix):
