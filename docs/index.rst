@@ -2,6 +2,7 @@
 .. _Graph-Ingest: https://github.com/Blackfynn/graph-ingest/
 .. _s3fs: https://s3fs.readthedocs.io/en/latest/
 .. _pathlib: https://docs.python.org/3/library/pathlib.html
+.. _`python client`: https://github.com/Blackfynn/blackfynn-python
 
 Pathman
 =======
@@ -11,7 +12,7 @@ regardless of where the files live: locally, on S3, or in some other remote
 service. The interface attempts to follow the design of the `pathlib`
 interface when possible. Support for interacting with files in S3 is
 done through heavy use of the s3fs_ library. Support for paths on the
-Blackfynn_ platform is made possible by the python client
+Blackfynn_ platform is made possible by the `python client`_
 
 Libraries Using Pathman
 =======================
@@ -25,5 +26,5 @@ Next Steps
 
    installation
    quickstart
-   api
    dev
+   api
