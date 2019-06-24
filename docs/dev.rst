@@ -37,6 +37,7 @@ Documentation can be generated for local viewing using the ``Makefile`` in
 
 .. code-block:: bash
 
+    cd pathman/docs/
     make html
 
 Once the docs are built, use a local web server to view them::
@@ -49,9 +50,9 @@ Once the docs are built, use a local web server to view them::
 Adding new Path implementations
 -------------------------------
 
-The pathman library comes packaged with several different path implementations,
-but the user might want to create a filesystem interface for some application
-specific to them.
+The pathman library comes with support for some common file system interfaces
+(local files, mounted drives, and S3), but the user might want to add support
+a a file system-like interface that is not currently supported (Azure, etc.).
 
 Pathman's path interface is easily extensible, and new implementations can be
 automatically added to ``Path``'s prefix-implementation mapping.
@@ -61,11 +62,11 @@ A New Class
 All new path classes should inherit from ``AbstractPath``, and if your target
 is in some remote location, should inherit ``RemotePath`` as well.
 
-All classes which inherit from ``AbstractPath`` have the option of implementing
+All classes that inherit from ``AbstractPath`` have the option of implementing
 a ``prefix`` property, which will flag them to be automatically added to
 ``Path``'s implementation mapping. For example, all S3 paths start with
 ``s3://``, and so ``S3Path.prefix`` is ``s3``. Then, when you create a path (as
-below), ``Path`` will know to initialize a ``S3Path`` object to match.
+below), ``Path`` will know to initialize an ``S3Path`` object to match.
 
 .. code-block:: python
 
@@ -76,24 +77,25 @@ The Constructor
 The first argument to a Path object will always be a string which represents
 the path for this object (eg. ``/Users/username/Desktop/file.txt``). This
 argument, or some other string which best represents this path is then stored
-in a variable called ``self._pathstr``. The constructor can (and probably will)
+in a variable called ``_pathstr``. The constructor can (and probably will)
 also recieve other information, like credentials for connecting to some remote
 service represented by your path.
 
 Methods and Properties
 ~~~~~~~~~~~~~~~~~~~~~~
 
-AbstractPath requires the implementaion of many methods and properties, which
-are all listed in ``abstract.py`` In general pathman seeks to conform to the
-behavior of the built-in python modules pathlib_ and os.path_.
+AbstractPath defines the interface for all Path objects. The required
+methods and properties are all listed in ``abstract.py`` In general,
+pathman seeks to conform to the behavior of the built-in python modules
+pathlib_ and os.path_.
 
 Not all methods are exactly mirrored by those libraries. Methods and properties
 with differences are documented below.
 
 * **extension** is equivalent to ``patlib.suffix``.
-* **walk**: ``os.path.walk`` is depreciated in favor os ``os.walk``. This
-  method returns a list of all files located in the directory specified by this
-  path and all of its child directories. Symlinked directories are ignored.
+* **walk**: is equivalent to ``os.walk``. This method returns a list of all
+  files located in the directory specified by this path and all of its child
+  directories. Symlinked directories are ignored.
 * **ls** is equivalent to ``patlib.iterdir``.
 * **remove** is equivalent to ``patlib.unlink`` and ``os.remove``.
 
@@ -104,6 +106,11 @@ with the string appended to the original path. For example::
 
     >>> Path('~/Desktop') / 'file.txt'
     Path('~/Desktop/file.txt')
+
+    >>> desktop = Path("~/Desktop")
+    >>> a_file = Path("file.txt")
+    >>> full_path = desktop / a_file
+    Path("~/Desktop/file.txt")
 
 Paths may also implement non-required methods which provide additional
 funcitonality based on the target platform. Some methods implemented by
