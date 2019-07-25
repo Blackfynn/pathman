@@ -13,14 +13,14 @@ class MetaPath(type, ABC):
 
     def __new__(cls, name, bases, namespace, **kwargs):
         result = super().__new__(cls, name, bases, namespace)
-        if name == 'AbstractPath' or name == 'Path':
+        if name == "AbstractPath" or name == "Path":
             return result
-        if 'prefix' not in namespace:
+        if "prefix" not in namespace:
             raise RuntimeError("{} does not have a prefix".format(name))
-        elif namespace['prefix'] in AbstractPath.paths:
+        elif namespace["prefix"] in AbstractPath.paths:
             raise RuntimeError("Prefix for {} is already in use.".format(name))
 
-        AbstractPath.paths[namespace['prefix']] = result
+        AbstractPath.paths[namespace["prefix"]] = result
         return result
 
 
@@ -29,7 +29,7 @@ class AbstractPath(metaclass=MetaPath):
 
     # This dict is automatically populated at runtime with all classes
     # that inherit from AbstractPath and implement a prefix property.
-    paths: Dict[str, 'AbstractPath'] = {}
+    paths: Dict[str, "AbstractPath"] = {}
 
     @abstractmethod
     def __init__(self, path: str, *args, **kwargs):
@@ -79,7 +79,7 @@ class AbstractPath(metaclass=MetaPath):
         pass
 
     @abstractmethod
-    def join(self, *pathsegments: str) -> 'AbstractPath':
+    def join(self, *pathsegments: str) -> "AbstractPath":
         """ Combine the current path with the given segments """
         pass
 
@@ -150,12 +150,12 @@ class AbstractPath(metaclass=MetaPath):
         pass
 
     @abstractmethod
-    def expanduser(self) -> 'AbstractPath':
+    def expanduser(self) -> "AbstractPath":
         """ Return a new path with ``~`` expanded """
         pass
 
     @abstractmethod
-    def abspath(self) -> 'AbstractPath':
+    def abspath(self) -> "AbstractPath":
         """ Make the current path absolute """
         pass
 
@@ -197,7 +197,7 @@ class AbstractPath(metaclass=MetaPath):
         pass
 
     @abstractmethod
-    def with_suffix(self, suffix) -> 'AbstractPath':
+    def with_suffix(self, suffix) -> "AbstractPath":
         """ Returns a Path with `suffix` added to the end of the this path """
         pass
 

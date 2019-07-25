@@ -7,19 +7,12 @@ from s3fs import S3FileSystem  # type: ignore
 
 from pathman.s3 import S3Path
 from pathman.local import LocalPath
-from pathman.abstract import AbstractPath, MetaPath
+
+from pathman.abstract import AbstractPath
 from pathman.utils import is_file
 
 
-class MetaPathLike(MetaPath, os.PathLike):
-    """
-    Allows `Path` to inherit from `AbstractPath` and `os.PathLike` without
-    interference between their metaclasses.
-    """
-    pass
-
-
-class Path(metaclass=MetaPathLike):
+class Path(os.PathLike):
     """ Represents a generic path object """
 
     def __new__(cls, path: str, *args, **kwargs) -> None:
@@ -34,7 +27,8 @@ class Path(metaclass=MetaPathLike):
         location: str = determine_output_location(path)
         if location not in AbstractPath.paths:
             raise UnsupportedPathTypeException(
-                "inferred location is not supported for {}".format(path))
+                "inferred location is not supported for {}".format(path)
+            )
         result = AbstractPath.paths[location](path, *args, **kwargs)
 
         result._location = location
@@ -86,7 +80,8 @@ def copy(src: AbstractPath, dest: AbstractPath, **kwargs):
         return copy_s3_s3(src, dest, **kwargs)
     else:
         raise UnsupportedCopyOperation(
-            "Only local -> s3 and s3 -> s3 are currently supported")
+            "Only local -> s3 and s3 -> s3 are currently supported"
+        )
     pass
 
 
