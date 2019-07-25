@@ -13,9 +13,9 @@ from blackfynn.models import BaseDataNode  # type: ignore
 class BlackfynnPath(AbstractPath, RemotePath):
     """ Representation of a path on the Blackfynn platform """
 
-    prefix = 'bf'
+    prefix = "bf"
 
-    def __init__(self, path: str, dataset=None, profile='default', **kwargs):
+    def __init__(self, path: str, dataset=None, profile="default", **kwargs):
         """
         Initializes a new BlackfynnPath
 
@@ -37,20 +37,19 @@ class BlackfynnPath(AbstractPath, RemotePath):
         prefix = self.prefix + "://"
 
         if not path.startswith(prefix):
-            raise ValueError('Blackfynn paths must begin with {}'
-                             .format(prefix))
-        if '.' in path:
-            self._extension = path[path.rfind('.'):]
-            path = path[:path.rfind('.')]
+            raise ValueError("Blackfynn paths must begin with {}".format(prefix))
+        if "." in path:
+            self._extension = path[path.rfind(".") :]
+            path = path[: path.rfind(".")]
         else:
-            self._extension = ''
+            self._extension = ""
         if dataset is None:
             self._pathstr = path
             if len(self.parts) == 0:
                 raise ValueError("Must specify a dataset")
             dataset = self.dataset
         else:
-            self._pathstr = prefix + os.path.join(dataset, path[len(prefix):])
+            self._pathstr = prefix + os.path.join(dataset, path[len(prefix) :])
         self._profile = profile
         bf = Blackfynn(self._profile)
         root = None
@@ -80,7 +79,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
     def __eq__(self, other) -> bool:
         return self._pathstr == other._pathstr
 
-    def __truediv__(self, key) -> 'BlackfynnPath':
+    def __truediv__(self, key) -> "BlackfynnPath":
         return self.join(key)
 
     @property
@@ -93,7 +92,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
 
     @property
     def path(self):
-        return '/'.join(self.parts[2:]) + self.extension
+        return "/".join(self.parts[2:]) + self.extension
 
     @property
     def parts(self):
@@ -112,11 +111,11 @@ class BlackfynnPath(AbstractPath, RemotePath):
             if exist_ok:
                 return
             else:
-                raise FileExistsError('{} already exists'.format(self))
+                raise FileExistsError("{} already exists".format(self))
         self.write_text("")
 
     def is_dir(self) -> bool:
-        return self.exists() and hasattr(self._bf_object, 'upload')
+        return self.exists() and hasattr(self._bf_object, "upload")
 
     def is_file(self) -> bool:
         return self.exists() and not self.is_dir()
@@ -126,7 +125,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
             if exist_ok:
                 return
             else:
-                raise FileExistsError('Can\'t mkdir {}'.format(self))
+                raise FileExistsError("Can't mkdir {}".format(self))
 
         bf = Blackfynn(self._profile)
         tokens = self.parts[1:]
@@ -138,10 +137,10 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 if token != tokens[-1]:  # the missing token is not at the end
                     if parents is False:
                         raise FileNotFoundError(
-                            'Missing directory {dir} in {path}'.format(
-                                dir=token,
-                                path=self._pathstr
-                            ))
+                            "Missing directory {dir} in {path}".format(
+                                dir=token, path=self._pathstr
+                            )
+                        )
                     else:
                         root = prev_root.create_collection(token)
                 else:
@@ -151,7 +150,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         if self.is_dir():
             self._bf_object.delete()
 
-    def join(self, *pathsegments: str) -> 'BlackfynnPath':
+    def join(self, *pathsegments: str) -> "BlackfynnPath":
         joined = os.path.join(self._pathstr, *pathsegments)
         return BlackfynnPath(joined)
 
@@ -159,10 +158,10 @@ class BlackfynnPath(AbstractPath, RemotePath):
         raise NotImplementedError("Blackfynn paths can't be opened")
 
     def write_bytes(self, contents, **kwargs):
-        return self._write(contents, 'wb')
+        return self._write(contents, "wb")
 
     def write_text(self, contents, **kwargs):
-        return self._write(contents, 'w')
+        return self._write(contents, "w")
 
     def read_bytes(self, **kwargs):
         return self._read().content
@@ -174,13 +173,13 @@ class BlackfynnPath(AbstractPath, RemotePath):
         if self.exists():
             self._bf_object.delete()
 
-    def expanduser(self) -> 'BlackfynnPath':
+    def expanduser(self) -> "BlackfynnPath":
         return self
 
-    def abspath(self) -> 'BlackfynnPath':
+    def abspath(self) -> "BlackfynnPath":
         return self
 
-    def walk(self) -> List['BlackfynnPath']:
+    def walk(self) -> List["BlackfynnPath"]:
         if not self.is_dir():
             return []
         files = []
@@ -189,51 +188,54 @@ class BlackfynnPath(AbstractPath, RemotePath):
             root, path = stack.pop()
             for item in root.items:
                 item_path = os.path.join(path, item.name)
-                if 'Collection' in item.type:
+                if "Collection" in item.type:
                     stack.append((item, item_path))
                 else:
                     extension = None
-                    if hasattr(item, 'sources'):
+                    if hasattr(item, "sources"):
                         if len(item.sources) > 1:
-                            logging.warning(
-                                "{} has too many sources".format(item))
+                            logging.warning("{} has too many sources".format(item))
                         extension = Path(item.sources[0].s3_key).suffix
-                    files.append(item_path + (extension if extension else ''))
+                    files.append(item_path + (extension if extension else ""))
         return [BlackfynnPath(file) for file in files]
 
-    def glob(self, pattern: str) -> List['BlackfynnPath']:
-        regex_text = '('
+    def glob(self, pattern: str) -> List["BlackfynnPath"]:
+        regex_text = "("
         for char in pattern:
-            if char == '*':
-                regex_text += '[^/]*'
-            elif char == '?':
-                regex_text += '.'
+            if char == "*":
+                regex_text += "[^/]*"
+            elif char == "?":
+                regex_text += "."
             else:
                 regex_text += re.escape(char)
-        regex_text += ')'
+        regex_text += ")"
         regex = re.compile(regex_text)
         files = self.walk()
         seen: set = set()
 
-        return [_file for _file in files
-                for match in [regex.match(_file.path)] if match
-                for path in [match.group(0)]
-                if not (path in seen or seen.add(path))]  # type: ignore
+        return [
+            _file
+            for _file in files
+            for match in [regex.match(_file.path)]
+            if match
+            for path in [match.group(0)]
+            if not (path in seen or seen.add(path))
+        ]  # type: ignore
 
-    def ls(self) -> List['BlackfynnPath']:
+    def ls(self) -> List["BlackfynnPath"]:
         if not self.is_dir():
             return []
         files = []
         for item in self._bf_object.items:
             ext = None
-            if hasattr(item, 'sources'):
+            if hasattr(item, "sources"):
                 ext = Path(item.sources[0].s3_key).suffix
                 if len(item.sources) > 1:
                     logging.warning("{} has too many sources".format(item))
-            files.append(self.join(item.name + (ext if ext else '')))
+            files.append(self.join(item.name + (ext if ext else "")))
         return files
 
-    def with_suffix(self, suffix) -> 'BlackfynnPath':
+    def with_suffix(self, suffix) -> "BlackfynnPath":
         return BlackfynnPath(self._pathstr + suffix)
 
     def _write(self, contents, mode):
@@ -251,25 +253,22 @@ class BlackfynnPath(AbstractPath, RemotePath):
             The IO mode to use when writting. Append is not supported.
 
         """
-        if mode.startswith('a'):
-            raise IOError('Append is not supported for Blackfynn paths')
+        if mode.startswith("a"):
+            raise IOError("Append is not supported for Blackfynn paths")
         if self.is_dir():
             return 0
         if self.exists():
             self._bf_object.delete()
         with TemporaryDirectory() as tmp:
-            path = '{dir}/{name}{ext}'.format(
-                dir=tmp,
-                name=self.stem,
-                ext=self.extension
+            path = "{dir}/{name}{ext}".format(
+                dir=tmp, name=self.stem, ext=self.extension
             )
             with open(path, mode) as f:
                 f.write(contents)
-            parent_dir = BlackfynnPath(
-                self._pathstr[:self._pathstr.rfind('/')])
+            parent_dir = BlackfynnPath(self._pathstr[: self._pathstr.rfind("/")])
             data = parent_dir._bf_object.upload(path)
             bf = Blackfynn(self._profile)
-            self._bf_object = bf.get(data[0][0]['package']['content']['id'])
+            self._bf_object = bf.get(data[0][0]["package"]["content"]["id"])
 
         return len(contents)
 
@@ -287,11 +286,11 @@ class BlackfynnPath(AbstractPath, RemotePath):
 
 def _get_collection_by_name(base, name):
     for item in base.items:
-        if item.type == 'Collection' and item.name == name:
+        if item.type == "Collection" and item.name == name:
             return item
 
 
 def _get_package_by_name(base, name):
     for item in base.items:
-        if item.type != 'Collection' and item.name == name:
+        if item.type != "Collection" and item.name == name:
             return item

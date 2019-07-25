@@ -9,7 +9,7 @@ import os
 class S3Path(AbstractPath, RemotePath):
     """ Wrapper around `s3fs.S3FileSystem`  """
 
-    prefix = 's3'
+    prefix = "s3"
 
     def __init__(self, path: str, **kwargs) -> None:
         self._pathstr = path
@@ -24,7 +24,7 @@ class S3Path(AbstractPath, RemotePath):
     def __eq__(self, other) -> bool:
         return self._pathstr == other._pathstr
 
-    def __truediv__(self, key) -> 'S3Path':
+    def __truediv__(self, key) -> "S3Path":
         return self.join(key)
 
     @property
@@ -47,10 +47,10 @@ class S3Path(AbstractPath, RemotePath):
         return self._path.touch(self._pathstr)
 
     def is_dir(self) -> bool:
-        return (self.exists() and not is_file(self._pathstr))
+        return self.exists() and not is_file(self._pathstr)
 
     def is_file(self) -> bool:
-        return (self.exists() and is_file(self._pathstr))
+        return self.exists() and is_file(self._pathstr)
 
     def mkdir(self, **kwargs) -> None:
         return self._path.mkdir(self._pathstr, **kwargs)
@@ -60,7 +60,7 @@ class S3Path(AbstractPath, RemotePath):
             return self._path.rm(self._pathstr, recursive=True, **kwargs)
         return self._path.rmdir(self._pathstr, **kwargs)
 
-    def join(self, *pathsegments: str) -> 'S3Path':
+    def join(self, *pathsegments: str) -> "S3Path":
         joined = os.path.join(self._pathstr, *pathsegments)
         return S3Path(joined)
 
@@ -90,25 +90,25 @@ class S3Path(AbstractPath, RemotePath):
             contents = f.read(**kwargs)
         return contents
 
-    def expanduser(self) -> 'S3Path':
+    def expanduser(self) -> "S3Path":
         return self
 
-    def abspath(self) -> 'S3Path':
+    def abspath(self) -> "S3Path":
         return self
 
-    def walk(self, **kwargs) -> List['S3Path']:
+    def walk(self, **kwargs) -> List["S3Path"]:
         children = self._path.walk(self._pathstr, **kwargs)
         return [S3Path(c) for c in children]
 
-    def ls(self, refresh=True) -> List['S3Path']:
+    def ls(self, refresh=True) -> List["S3Path"]:
         all_files = [S3Path("s3://" + c) for c in self._path.ls(self._pathstr)]
         return all_files
 
-    def glob(self, pattern) -> List['S3Path']:
+    def glob(self, pattern) -> List["S3Path"]:
         globber = self.join(pattern)._pathstr
-        return [S3Path('s3://' + p) for p in self._path.glob(globber)]
+        return [S3Path("s3://" + p) for p in self._path.glob(globber)]
 
-    def with_suffix(self, suffix) -> 'S3Path':
+    def with_suffix(self, suffix) -> "S3Path":
         return S3Path(self._pathstr + suffix)
 
     @property

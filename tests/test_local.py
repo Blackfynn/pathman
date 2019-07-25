@@ -5,36 +5,44 @@ from pathman import LocalPath
 
 
 class TestLocalPath(object):
-
     def test_initialize(self):
         path = LocalPath("some/test/path")
         assert str(path) == "some/test/path"
 
-    @pytest.mark.parametrize("path, expectation", [
-        (local_file(), True),
-        (local_dir(), True),
-        ("/some/fake/file.txt", False),
-        ("/some/fake/dir", False),
-        ("/some/fake/dir/", False),
-        ("some/fake/dir", False)
-    ])
+    @pytest.mark.parametrize(
+        "path, expectation",
+        [
+            (local_file(), True),
+            (local_dir(), True),
+            ("/some/fake/file.txt", False),
+            ("/some/fake/dir", False),
+            ("/some/fake/dir/", False),
+            ("some/fake/dir", False),
+        ],
+    )
     def test_exists(self, path, expectation):
         assert LocalPath(path).exists() == expectation
 
-    @pytest.mark.parametrize("path,expectation", [
-        (local_file(), False),
-        (local_dir(), True),
-        ("some/local/nonexistent/dir/", False),
-        ("some/local/nonexistent/dir", False),
-    ])
+    @pytest.mark.parametrize(
+        "path,expectation",
+        [
+            (local_file(), False),
+            (local_dir(), True),
+            ("some/local/nonexistent/dir/", False),
+            ("some/local/nonexistent/dir", False),
+        ],
+    )
     def test_is_dir(self, path, expectation):
         assert LocalPath(path).is_dir() == expectation
 
-    @pytest.mark.parametrize("path,expectation", [
-        (local_file(), True),
-        (local_dir(), False),
-        ("some/local/nonexistent/file/file.txt", False),
-    ])
+    @pytest.mark.parametrize(
+        "path,expectation",
+        [
+            (local_file(), True),
+            (local_dir(), False),
+            ("some/local/nonexistent/file/file.txt", False),
+        ],
+    )
     def test_is_file(self, path, expectation):
         assert LocalPath(path).is_file() == expectation
 
@@ -52,12 +60,15 @@ class TestLocalPath(object):
         path.rmdir()
         assert os.path.exists(to_create) is False
 
-    @pytest.mark.parametrize("segments", [
-        ["/some/dir/", "some_file.txt"],
-        ["/some/dir", "some_file.txt"],
-        ["some/dir", "some_file.txt"],
-        ["some/dir/", "some_file.txt"],
-    ])
+    @pytest.mark.parametrize(
+        "segments",
+        [
+            ["/some/dir/", "some_file.txt"],
+            ["/some/dir", "some_file.txt"],
+            ["some/dir", "some_file.txt"],
+            ["some/dir/", "some_file.txt"],
+        ],
+    )
     def test_join(self, segments):
         path = LocalPath("")
         assert str(path.join(*segments)) == os.path.join("", *segments)

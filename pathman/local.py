@@ -9,7 +9,7 @@ import os
 class LocalPath(AbstractPath):
     """ Wrapper around `pathlib.Path` """
 
-    prefix = 'local'
+    prefix = "local"
 
     def __init__(self, path: str, **kwargs) -> None:
         self._path = PathLibPath(path)
@@ -24,7 +24,7 @@ class LocalPath(AbstractPath):
     def __eq__(self, other) -> bool:
         return self._pathstr == other._pathstr
 
-    def __truediv__(self, key) -> 'LocalPath':
+    def __truediv__(self, key) -> "LocalPath":
         return self.join(key)
 
     @property
@@ -51,7 +51,7 @@ class LocalPath(AbstractPath):
             return shutil.rmtree(self._pathstr)
         return self._path.rmdir()
 
-    def join(self, *pathsegments: str) -> 'LocalPath':
+    def join(self, *pathsegments: str) -> "LocalPath":
         return LocalPath(str(self._path.joinpath(*pathsegments)))
 
     def open(self, mode="r", **kwargs):
@@ -72,26 +72,26 @@ class LocalPath(AbstractPath):
     def read_bytes(self, **kwargs):
         return self._path.read_bytes(**kwargs)
 
-    def expanduser(self) -> 'LocalPath':
+    def expanduser(self) -> "LocalPath":
         return LocalPath(str(self._path.expanduser()))
 
-    def abspath(self) -> 'LocalPath':
+    def abspath(self) -> "LocalPath":
         return LocalPath(str(self._path.resolve()))
 
-    def walk(self) -> List['LocalPath']:
+    def walk(self) -> List["LocalPath"]:
         all_files = []
         for root, directories, files in os.walk(self._pathstr):
             for f in files:
                 all_files.append(os.path.join(root, f))
         return [LocalPath(p) for p in all_files]
 
-    def ls(self) -> List['LocalPath']:
+    def ls(self) -> List["LocalPath"]:
         return [LocalPath(str(p)) for p in self._path.iterdir()]
 
-    def glob(self, path) -> List['LocalPath']:
+    def glob(self, path) -> List["LocalPath"]:
         return [LocalPath(str(p)) for p in self._path.glob(path)]
 
-    def with_suffix(self, suffix) -> 'LocalPath':
+    def with_suffix(self, suffix) -> "LocalPath":
         return LocalPath(str(self._path.with_suffix(suffix)))
 
     @property
