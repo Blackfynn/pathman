@@ -36,6 +36,9 @@ class Path(os.PathLike):
 
         return result
 
+    def __fspath__(self):
+        return ""
+
 
 def determine_output_location(abspath: str) -> str:
     """ Determine output location given a path

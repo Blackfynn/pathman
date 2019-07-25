@@ -76,6 +76,9 @@ class BlackfynnPath(AbstractPath, RemotePath):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def __fspath__(self) -> str:
+        return self.__str__()
+
     def __eq__(self, other) -> bool:
         return self._pathstr == other._pathstr
 

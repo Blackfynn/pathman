@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import abstractmethod, abstractproperty
 from typing import Dict, List
 import os
 
 
-class MetaPath(type, ABC):
+class MetaPath(type, os.PathLike):
     """
     A metaclass for `AbstractPath`. Whenever a class inherits from
     `AbtractPath`, if it has a `prefix` property, it will be registered
