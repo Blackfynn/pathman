@@ -7,7 +7,6 @@ from s3fs import S3FileSystem  # type: ignore
 
 from pathman.s3 import S3Path
 from pathman.local import LocalPath
-
 from pathman.abstract import AbstractPath
 from pathman.utils import is_file
 
