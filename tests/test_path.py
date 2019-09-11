@@ -284,11 +284,11 @@ class TestBlackfynnPath(object):
             f_path = '{}/file.txt'.format(tmp)
             with open(f_path, 'w') as f:
                 f.write("Hello, World!")
-            cls.ds.upload(f_path)
+            cls.ds.upload(f_path, use_agent=False)
             t_path = '{}/table.csv'.format(tmp)
             with open(t_path, 'w') as f:
                 f.write("col1,col2\n1,A\n2,B\n3,C")
-            cls.ds.upload(t_path)
+            cls.ds.upload(t_path, use_agent=False)
 
     @classmethod
     def teardown_class(cls):
@@ -344,7 +344,7 @@ class TestBlackfynnPath(object):
     def test_walk(self):
         path = BlackfynnPath("bf://", self.ds.name)
         files = path.walk()
-        assert len(files) == 2
+        assert sum(1 for _ in files) == 2
 
     @pytest.mark.parametrize("pattern, expected_length", [
         ("*.txt", 1),
@@ -373,7 +373,7 @@ class TestBlackfynnPath(object):
     def test_write(self):
         path = BlackfynnPath("bf://write.txt", self.ds.name)
         to_write = "Hello, World!"
-        path.write_text(to_write)
+        path.write_text(to_write, use_agent=False)
         retrieved = urllib.request.urlopen(
             path._bf_object.sources[0].url).read()
         assert str(retrieved, 'utf-8') == "Hello, World!"

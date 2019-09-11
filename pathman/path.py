@@ -343,10 +343,10 @@ class BlackfynnPath(AbstractPath, RemotePath):
         raise NotImplementedError("Blackfynn paths can't be opened")
 
     def write_bytes(self, contents, **kwargs):
-        return self._write(contents, 'wb')
+        return self._write(contents, 'wb', **kwargs)
 
     def write_text(self, contents, **kwargs):
-        return self._write(contents, 'w')
+        return self._write(contents, 'w', **kwargs)
 
     def read_bytes(self, **kwargs):
         return self._read().content
@@ -418,7 +418,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
     def with_suffix(self, suffix) -> 'BlackfynnPath':
         return BlackfynnPath(self._pathstr + suffix)
 
-    def _write(self, contents, mode):
+    def _write(self, contents, mode, **kwargs):
         """
         Writes the specified `contents` to this BlackfynnPath. If this object
         references a directory, then nothing will be written, and this method
@@ -431,7 +431,8 @@ class BlackfynnPath(AbstractPath, RemotePath):
             The contents to be written. Either bytes or a string.
         mode:
             The IO mode to use when writting. Append is not supported.
-
+        kwargs:
+            Keyword arguments passed into the blackfynn.upload command
         """
         if mode.startswith('a'):
             raise IOError('Append is not supported for Blackfynn paths')
@@ -449,7 +450,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 f.write(contents)
             parent_dir = BlackfynnPath(
                 self._pathstr[:self._pathstr.rfind('/')])
-            data = parent_dir._bf_object.upload(path)
+            data = parent_dir._bf_object.upload(path, **kwargs)
             bf = Blackfynn(self._profile)
             self._bf_object = bf.get(data[0][0]['package']['content']['id'])
 
