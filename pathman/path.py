@@ -381,7 +381,9 @@ class BlackfynnPath(AbstractPath, RemotePath):
                             logging.warning(
                                 "{} has too many sources".format(item))
                         extension = Path(item.sources[0].s3_key).extension
-                    yield BlackfynnPath(item_path + (extension if extension else ''))
+                    yield BlackfynnPath(
+                        item_path + (extension if extension else '')
+                    )
 
     def glob(self, pattern: str) -> List['BlackfynnPath']:
         regex_text = '('
@@ -557,7 +559,9 @@ class S3Path(AbstractPath, RemotePath):
         return self
 
     def walk(self, **kwargs) -> Generator['S3Path', None, None]:
-        for root, directories, files in self._path.walk(self._pathstr, **kwargs):
+        for root, directories, files in self._path.walk(
+                self._pathstr, **kwargs
+        ):
             for f in files:
                 yield S3Path(os.path.join(root, f))
 
