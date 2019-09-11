@@ -5,7 +5,7 @@ import shutil
 import re
 import requests
 import logging
-from typing import List, Union, no_type_check
+from typing import List, Union, no_type_check, Generator
 from abc import ABC, abstractmethod, abstractproperty
 from pathlib import Path as PathLibPath, PurePath
 from pathman.exc import UnsupportedPathTypeException, UnsupportedCopyOperation
@@ -83,7 +83,7 @@ class AbstractPath(ABC):
         pass
 
     @abstractmethod
-    def walk(self):
+    def walk(self, **kwargs):
         pass
 
     @abstractmethod
@@ -181,12 +181,10 @@ class LocalPath(AbstractPath):
     def abspath(self) -> 'LocalPath':
         return LocalPath(str(self._path.resolve()))
 
-    def walk(self) -> List['LocalPath']:
-        all_files = []
-        for root, directories, files in os.walk(self._pathstr):
+    def walk(self, **kwargs) -> Generator['LocalPath', None, None]:
+        for root, directories, files in os.walk(self._pathstr, **kwargs):
             for f in files:
-                all_files.append(os.path.join(root, f))
-        return [LocalPath(p) for p in all_files]
+                yield LocalPath(os.path.join(root, f))
 
     def ls(self) -> List['LocalPath']:
         return [LocalPath(str(p)) for p in self._path.iterdir()]
@@ -366,10 +364,9 @@ class BlackfynnPath(AbstractPath, RemotePath):
     def abspath(self) -> 'BlackfynnPath':
         return self
 
-    def walk(self) -> List['BlackfynnPath']:
+    def walk(self, **kwargs) -> Generator['BlackfynnPath', None, None]:
         if not self.is_dir():
-            return []
-        files = []
+            return
         stack = [(self._bf_object, self._pathstr)]
         while len(stack) > 0:
             root, path = stack.pop()
@@ -384,8 +381,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                             logging.warning(
                                 "{} has too many sources".format(item))
                         extension = Path(item.sources[0].s3_key).extension
-                    files.append(item_path + (extension if extension else ''))
-        return [BlackfynnPath(file) for file in files]
+                    yield BlackfynnPath(item_path + (extension if extension else ''))
 
     def glob(self, pattern: str) -> List['BlackfynnPath']:
         regex_text = '('
@@ -559,9 +555,10 @@ class S3Path(AbstractPath, RemotePath):
     def abspath(self) -> 'S3Path':
         return self
 
-    def walk(self, **kwargs) -> List['S3Path']:
-        children = self._path.walk(self._pathstr, **kwargs)
-        return [S3Path(c) for c in children]
+    def walk(self, **kwargs) -> Generator['S3Path', None, None]:
+        for root, directories, files in self._path.walk(self._pathstr, **kwargs):
+            for f in files:
+                yield S3Path(os.path.join(root, f))
 
     def ls(self, refresh=True) -> List['S3Path']:
         all_files = [S3Path("s3://" + c) for c in self._path.ls(self._pathstr)]
@@ -758,7 +755,7 @@ class Path(AbstractPath, os.PathLike):
         """ Make the current path absolute """
         return Path(self._impl.abspath()._pathstr)
 
-    def walk(self) -> List['Path']:
+    def walk(self, **kwargs) -> Generator['Path', None, None]:
         """ Get a list of files below the current path
 
         Note
@@ -766,7 +763,7 @@ class Path(AbstractPath, os.PathLike):
         This does not mirror the behavior of `os.walk`. A list of absolute
         paths are returned
         """
-        return [Path(p._pathstr) for p in self._impl.walk()]
+        return (Path(p._pathstr) for p in self._impl.walk(**kwargs))
 
     def ls(self) -> List['Path']:
         return [Path(p._pathstr) for p in self._impl.ls()]

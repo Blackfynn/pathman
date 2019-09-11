@@ -3,6 +3,8 @@ import pytest
 import mock
 import boto3
 import functools
+import random
+import string
 from moto import mock_s3
 from pkg_resources import resource_filename
 from tempfile import TemporaryDirectory
@@ -18,6 +20,9 @@ data = functools.partial(resource_filename, 'tests.resources')
 
 real_bucket = "s3://test-bucket"
 real_file = "s3://test-bucket/test-key/test_file.txt"
+
+def random_bucket() -> str:
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
 
 
 class MockBlackfynn(Blackfynn):
@@ -151,7 +156,9 @@ class TestPath(object):
     ])
     def test_walk(self, base_dir, expected_length):
         found_files = Path(base_dir).walk()
-        assert len(found_files) == expected_length
+
+        # use sum() to exhaust the generator
+        assert sum(1 for _ in found_files) == expected_length
 
     @pytest.mark.parametrize("base_dir, expected_length", [
         (data("folder/"), 2),
@@ -532,18 +539,19 @@ def test_determine_output_location(path, expectation):
 @mock_s3
 def test_copy_local_s3():
     s3 = boto3.client("s3")
-    s3.create_bucket(Bucket="test-bucket")
-    remote_file = S3Path("test-bucket/test.py")
+    bucket = random_bucket()
+    s3.create_bucket(Bucket=bucket)
+    remote_file = S3Path("{}/test.py".format(bucket))
     copy_local_s3(LocalPath(local_file()), remote_file)
     assert remote_file.exists()
 
 
 @mock_s3
 def test_copy():
-    # Currently only testing local -> s3
     s3 = boto3.client("s3")
-    s3.create_bucket(Bucket="test-bucket")
-    remote_file = Path("s3://test-bucket/test.py")
+    bucket = random_bucket()
+    s3.create_bucket(Bucket=bucket)
+    remote_file = Path("s3://{}/test.py".format(bucket))
     local_file_path = Path(local_file())
     copy(local_file_path, remote_file)
     assert remote_file.exists()
