@@ -3,6 +3,8 @@ import pytest
 import mock
 import boto3
 import functools
+import random
+import string
 from moto import mock_s3
 from pkg_resources import resource_filename
 from tempfile import TemporaryDirectory
@@ -18,6 +20,9 @@ data = functools.partial(resource_filename, 'tests.resources')
 
 real_bucket = "s3://test-bucket"
 real_file = "s3://test-bucket/test-key/test_file.txt"
+
+def random_bucket() -> str:
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
 
 
 class MockBlackfynn(Blackfynn):
@@ -151,7 +156,9 @@ class TestPath(object):
     ])
     def test_walk(self, base_dir, expected_length):
         found_files = Path(base_dir).walk()
-        assert len(found_files) == expected_length
+
+        # use sum() to exhaust the generator
+        assert sum(1 for _ in found_files) == expected_length
 
     @pytest.mark.parametrize("base_dir, expected_length", [
         (data("folder/"), 2),
@@ -277,11 +284,11 @@ class TestBlackfynnPath(object):
             f_path = '{}/file.txt'.format(tmp)
             with open(f_path, 'w') as f:
                 f.write("Hello, World!")
-            cls.ds.upload(f_path)
+            cls.ds.upload(f_path, use_agent=False)
             t_path = '{}/table.csv'.format(tmp)
             with open(t_path, 'w') as f:
                 f.write("col1,col2\n1,A\n2,B\n3,C")
-            cls.ds.upload(t_path)
+            cls.ds.upload(t_path, use_agent=False)
 
     @classmethod
     def teardown_class(cls):
@@ -337,7 +344,7 @@ class TestBlackfynnPath(object):
     def test_walk(self):
         path = BlackfynnPath("bf://", self.ds.name)
         files = path.walk()
-        assert len(files) == 2
+        assert sum(1 for _ in files) == 2
 
     @pytest.mark.parametrize("pattern, expected_length", [
         ("*.txt", 1),
@@ -366,7 +373,7 @@ class TestBlackfynnPath(object):
     def test_write(self):
         path = BlackfynnPath("bf://write.txt", self.ds.name)
         to_write = "Hello, World!"
-        path.write_text(to_write)
+        path.write_text(to_write, use_agent=False)
         retrieved = urllib.request.urlopen(
             path._bf_object.sources[0].url).read()
         assert str(retrieved, 'utf-8') == "Hello, World!"
@@ -532,18 +539,19 @@ def test_determine_output_location(path, expectation):
 @mock_s3
 def test_copy_local_s3():
     s3 = boto3.client("s3")
-    s3.create_bucket(Bucket="test-bucket")
-    remote_file = S3Path("test-bucket/test.py")
+    bucket = random_bucket()
+    s3.create_bucket(Bucket=bucket)
+    remote_file = S3Path("{}/test.py".format(bucket))
     copy_local_s3(LocalPath(local_file()), remote_file)
     assert remote_file.exists()
 
 
 @mock_s3
 def test_copy():
-    # Currently only testing local -> s3
     s3 = boto3.client("s3")
-    s3.create_bucket(Bucket="test-bucket")
-    remote_file = Path("s3://test-bucket/test.py")
+    bucket = random_bucket()
+    s3.create_bucket(Bucket=bucket)
+    remote_file = Path("s3://{}/test.py".format(bucket))
     local_file_path = Path(local_file())
     copy(local_file_path, remote_file)
     assert remote_file.exists()

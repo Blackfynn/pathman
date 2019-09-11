@@ -5,7 +5,7 @@ import shutil
 import re
 import requests
 import logging
-from typing import List, Union, no_type_check
+from typing import List, Union, no_type_check, Generator
 from abc import ABC, abstractmethod, abstractproperty
 from pathlib import Path as PathLibPath, PurePath
 from pathman.exc import UnsupportedPathTypeException, UnsupportedCopyOperation
@@ -83,7 +83,7 @@ class AbstractPath(ABC):
         pass
 
     @abstractmethod
-    def walk(self):
+    def walk(self, **kwargs):
         pass
 
     @abstractmethod
@@ -181,12 +181,10 @@ class LocalPath(AbstractPath):
     def abspath(self) -> 'LocalPath':
         return LocalPath(str(self._path.resolve()))
 
-    def walk(self) -> List['LocalPath']:
-        all_files = []
-        for root, directories, files in os.walk(self._pathstr):
+    def walk(self, **kwargs) -> Generator['LocalPath', None, None]:
+        for root, directories, files in os.walk(self._pathstr, **kwargs):
             for f in files:
-                all_files.append(os.path.join(root, f))
-        return [LocalPath(p) for p in all_files]
+                yield LocalPath(os.path.join(root, f))
 
     def ls(self) -> List['LocalPath']:
         return [LocalPath(str(p)) for p in self._path.iterdir()]
@@ -299,7 +297,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 return
             else:
                 raise FileExistsError('{} already exists'.format(self))
-        self.write_text("")
+        self.write_text("", use_agent=False)
 
     def is_dir(self) -> bool:
         return self.exists() and hasattr(self._bf_object, 'upload')
@@ -345,10 +343,10 @@ class BlackfynnPath(AbstractPath, RemotePath):
         raise NotImplementedError("Blackfynn paths can't be opened")
 
     def write_bytes(self, contents, **kwargs):
-        return self._write(contents, 'wb')
+        return self._write(contents, 'wb', **kwargs)
 
     def write_text(self, contents, **kwargs):
-        return self._write(contents, 'w')
+        return self._write(contents, 'w', **kwargs)
 
     def read_bytes(self, **kwargs):
         return self._read().content
@@ -366,10 +364,9 @@ class BlackfynnPath(AbstractPath, RemotePath):
     def abspath(self) -> 'BlackfynnPath':
         return self
 
-    def walk(self) -> List['BlackfynnPath']:
+    def walk(self, **kwargs) -> Generator['BlackfynnPath', None, None]:
         if not self.is_dir():
-            return []
-        files = []
+            return
         stack = [(self._bf_object, self._pathstr)]
         while len(stack) > 0:
             root, path = stack.pop()
@@ -384,8 +381,9 @@ class BlackfynnPath(AbstractPath, RemotePath):
                             logging.warning(
                                 "{} has too many sources".format(item))
                         extension = Path(item.sources[0].s3_key).extension
-                    files.append(item_path + (extension if extension else ''))
-        return [BlackfynnPath(file) for file in files]
+                    yield BlackfynnPath(
+                        item_path + (extension if extension else '')
+                    )
 
     def glob(self, pattern: str) -> List['BlackfynnPath']:
         regex_text = '('
@@ -422,7 +420,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
     def with_suffix(self, suffix) -> 'BlackfynnPath':
         return BlackfynnPath(self._pathstr + suffix)
 
-    def _write(self, contents, mode):
+    def _write(self, contents, mode, **kwargs):
         """
         Writes the specified `contents` to this BlackfynnPath. If this object
         references a directory, then nothing will be written, and this method
@@ -435,7 +433,8 @@ class BlackfynnPath(AbstractPath, RemotePath):
             The contents to be written. Either bytes or a string.
         mode:
             The IO mode to use when writting. Append is not supported.
-
+        kwargs:
+            Keyword arguments passed into the blackfynn.upload command
         """
         if mode.startswith('a'):
             raise IOError('Append is not supported for Blackfynn paths')
@@ -453,7 +452,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 f.write(contents)
             parent_dir = BlackfynnPath(
                 self._pathstr[:self._pathstr.rfind('/')])
-            data = parent_dir._bf_object.upload(path)
+            data = parent_dir._bf_object.upload(path, **kwargs)
             bf = Blackfynn(self._profile)
             self._bf_object = bf.get(data[0][0]['package']['content']['id'])
 
@@ -559,9 +558,12 @@ class S3Path(AbstractPath, RemotePath):
     def abspath(self) -> 'S3Path':
         return self
 
-    def walk(self, **kwargs) -> List['S3Path']:
-        children = self._path.walk(self._pathstr, **kwargs)
-        return [S3Path(c) for c in children]
+    def walk(self, **kwargs) -> Generator['S3Path', None, None]:
+        for root, directories, files in self._path.walk(
+                self._pathstr, **kwargs
+        ):
+            for f in files:
+                yield S3Path(os.path.join(root, f))
 
     def ls(self, refresh=True) -> List['S3Path']:
         all_files = [S3Path("s3://" + c) for c in self._path.ls(self._pathstr)]
@@ -758,7 +760,7 @@ class Path(AbstractPath, os.PathLike):
         """ Make the current path absolute """
         return Path(self._impl.abspath()._pathstr)
 
-    def walk(self) -> List['Path']:
+    def walk(self, **kwargs) -> Generator['Path', None, None]:
         """ Get a list of files below the current path
 
         Note
@@ -766,7 +768,7 @@ class Path(AbstractPath, os.PathLike):
         This does not mirror the behavior of `os.walk`. A list of absolute
         paths are returned
         """
-        return [Path(p._pathstr) for p in self._impl.walk()]
+        return (Path(p._pathstr) for p in self._impl.walk(**kwargs))
 
     def ls(self) -> List['Path']:
         return [Path(p._pathstr) for p in self._impl.ls()]
