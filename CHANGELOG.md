@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   instead
 
 ### Changed
-- All walk() now return generators instead of lists
+- All walk() implementations return generators instead of lists
 
 ## [0.1.1]
 - Initial release

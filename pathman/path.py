@@ -297,7 +297,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 return
             else:
                 raise FileExistsError('{} already exists'.format(self))
-        self.write_text("")
+        self.write_text("", use_agent=False)
 
     def is_dir(self) -> bool:
         return self.exists() and hasattr(self._bf_object, 'upload')
