@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.1.2]
 ### Added
-- Path.walk() now takes **kwargs to pass into the underlying implementation
+- Path.walk() now takes `**kwargs` to pass into the underlying implementation
 
 ### Fixed
 - S3Path.walk() was returning a generator in the style of os.walk(),
