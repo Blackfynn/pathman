@@ -10,10 +10,10 @@ import re
 import requests
 import shutil
 
-from blackfynn import Blackfynn
-from blackfynn.models import BaseDataNode
-from s3fs import S3FileSystem
-import boto3
+from blackfynn import Blackfynn  # type: ignore
+from blackfynn.models import BaseDataNode  # type: ignore
+from s3fs import S3FileSystem  # type: ignore
+import boto3  # type: ignore
 
 from pathman.exc import UnsupportedPathTypeException, UnsupportedCopyOperation
 
