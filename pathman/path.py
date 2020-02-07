@@ -857,6 +857,7 @@ def copy_s3_local(src: S3Path, dest: LocalPath, **kwargs):
 
     bucket = src.bucket
     prefix = src.key
+    prefix_parts = prefix.split("/")
 
     # copy will be recursive automatically if the src is a directory
     if src.is_dir():
@@ -870,7 +871,7 @@ def copy_s3_local(src: S3Path, dest: LocalPath, **kwargs):
                 batch = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
 
             for key in batch["Contents"]:
-                key_parts = key["Key"].split("/")
+                key_parts = key["Key"].split("/")[len(prefix_parts) :]
 
                 # create local directories
                 destination = Path(str(dest.join(*key_parts)))

@@ -678,13 +678,13 @@ def test_copy_s3_local_recursive():
 
     s3.create_bucket(Bucket=bucket)
 
-    s3.upload_file(local_file(), bucket, "test.py")
-    s3.upload_file(local_file(), bucket, "subdir/test.py")
-    s3.upload_file(local_file(), bucket, "subdir/test2.py")
-    s3.upload_file(local_file(), bucket, "subdir/subdir/test.py")
+    s3.upload_file(local_file(), bucket, "basedir/test.py")
+    s3.upload_file(local_file(), bucket, "basedir/subdir/test.py")
+    s3.upload_file(local_file(), bucket, "basedir/subdir/test2.py")
+    s3.upload_file(local_file(), bucket, "basedir/subdir/subdir/test.py")
 
-    root_path = Path(os.path.join(local_dir(), "subdir"))
-    copy_s3_local(S3Path("s3://{}".format(bucket)), root_path)
+    root_path = Path(os.path.join(local_dir(), "basedir"))
+    copy_s3_local(S3Path("s3://{}/basedir".format(bucket)), root_path)
 
     try:
         assert root_path.exists()
