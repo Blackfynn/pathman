@@ -684,7 +684,7 @@ def test_copy_s3_local_recursive():
     s3.upload_file(local_file(), bucket, "subdir/subdir/test.py")
 
     root_path = Path(os.path.join(local_dir(), "subdir"))
-    copy_s3_local(S3Path("s3://{}".format(bucket)), root_path, recursive=True)
+    copy_s3_local(S3Path("s3://{}".format(bucket)), root_path)
 
     try:
         assert root_path.exists()
