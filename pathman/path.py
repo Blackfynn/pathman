@@ -393,16 +393,14 @@ class BlackfynnPath(AbstractPath, RemotePath):
         regex_text += ")"
         regex = re.compile(regex_text)
         files = self.walk()
-        seen: set = set()
+        paths: set = set()
 
-        return [
-            _file
-            for _file in files
-            for match in [regex.match(_file.path)]
-            if match
-            for path in [match.group(0)]
-            if not (path in seen or seen.add(path))
-        ]  # type: ignore
+        for _file in files:
+            match = regex.match(_file.path)
+            if match:
+                paths.add(match.group(0))
+
+        return list(paths)
 
     def ls(self) -> List["BlackfynnPath"]:
         if not self.is_dir():
@@ -416,12 +414,6 @@ class BlackfynnPath(AbstractPath, RemotePath):
                     logging.warning("{} has too many sources".format(item))
             files.append(self.join(item.name + (ext if ext else "")))
         return files
-
-    def dirname(self) -> "BlackfynnPath":
-        """ Return the directory name of the current path. Mimics the behavior
-            of `os.path.dirname`
-        """
-        return Path(os.path.dirname(self._pathstr))
 
     def with_suffix(self, suffix) -> "BlackfynnPath":
         return BlackfynnPath(self._pathstr + suffix)
@@ -881,7 +873,7 @@ def copy_s3_local(src: S3Path, dest: LocalPath, **kwargs):
                 key_parts = key["Key"].split("/")
 
                 # create local directories
-                destination = dest.join(*key_parts)
+                destination = Path(str(dest.join(*key_parts)))
                 destination.dirname().mkdir(parents=True, exist_ok=True)
                 s3.download_file(
                     Bucket=bucket,
