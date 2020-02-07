@@ -862,9 +862,10 @@ def copy_s3_local(
 
     bucket = src.bucket
     prefix = src.key
+    prefix_parts = prefix.split("/")
 
     def _download_key(key: str):
-        key_parts = key.split("/")
+        key_parts = key.split("/")[len(prefix_parts) :]
 
         # create local directories
         destination = Path(str(dest.join(*key_parts)))
