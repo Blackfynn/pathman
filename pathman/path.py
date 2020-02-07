@@ -1,18 +1,21 @@
 """ Module for abstracting over local/remote file paths """
+from abc import ABC, abstractmethod, abstractproperty
+from concurrent import futures
+from pathlib import Path as PathLibPath, PurePath
+from tempfile import TemporaryDirectory
+from typing import List, Union, no_type_check, Generator, Optional
+import logging
 import os
-import boto3  # type: ignore
-import shutil
 import re
 import requests
-import logging
-from typing import List, Union, no_type_check, Generator
-from abc import ABC, abstractmethod, abstractproperty
-from pathlib import Path as PathLibPath, PurePath
+import shutil
+
+from blackfynn import Blackfynn
+from blackfynn.models import BaseDataNode
+from s3fs import S3FileSystem
+import boto3
+
 from pathman.exc import UnsupportedPathTypeException, UnsupportedCopyOperation
-from s3fs import S3FileSystem  # type: ignore
-from blackfynn import Blackfynn  # type: ignore
-from blackfynn.models import BaseDataNode  # type: ignore
-from tempfile import TemporaryDirectory
 
 
 class AbstractPath(ABC):
@@ -852,12 +855,23 @@ def copy_s3_s3(src: S3Path, dest: S3Path, **kwargs):
     s3fs.copy(str(src), str(dest), **kwargs)
 
 
-def copy_s3_local(src: S3Path, dest: LocalPath, **kwargs):
+def copy_s3_local(
+    src: S3Path, dest: LocalPath, parallelism: Optional[int] = None, **kwargs
+):
     s3 = boto3.client("s3")
 
     bucket = src.bucket
     prefix = src.key
-    prefix_parts = prefix.split("/")
+
+    def _download_key(key: str):
+        key_parts = key.split("/")
+
+        # create local directories
+        destination = Path(str(dest.join(*key_parts)))
+        destination.dirname().mkdir(parents=True, exist_ok=True)
+        s3.download_file(
+            Bucket=bucket, Key=key, Filename=str(destination), ExtraArgs=kwargs,
+        )
 
     # copy will be recursive automatically if the src is a directory
     if src.is_dir():
@@ -870,17 +884,13 @@ def copy_s3_local(src: S3Path, dest: LocalPath, **kwargs):
             else:
                 batch = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
 
-            for key in batch["Contents"]:
-                key_parts = key["Key"].split("/")[len(prefix_parts) :]
-
-                # create local directories
-                destination = Path(str(dest.join(*key_parts)))
-                destination.dirname().mkdir(parents=True, exist_ok=True)
-                s3.download_file(
-                    Bucket=bucket,
-                    Key=key["Key"],
-                    Filename=str(destination),
-                    ExtraArgs=kwargs,
+            with futures.ThreadPoolExecutor(max_workers=parallelism) as executor:
+                futures.wait(
+                    [
+                        executor.submit(_download_key, key["Key"])
+                        for key in batch["Contents"]
+                    ],
+                    return_when=futures.FIRST_EXCEPTION,
                 )
 
             if "NextContinuationToken" in batch:
@@ -901,7 +911,9 @@ def copy_s3_local(src: S3Path, dest: LocalPath, **kwargs):
                 Bucket=bucket, Key=prefix, Filename=str(dest), ExtraArgs=kwargs,
             )
     else:
-        raise UnsupportedCopyOperation("src was not a directory or a file")
+        raise UnsupportedCopyOperation(
+            "src was not a directory or a file: {}".format(src)
+        )
 
 
 def _get_collection_by_name(base, name):
