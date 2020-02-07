@@ -884,7 +884,10 @@ def copy_s3_local(src: S3Path, dest: LocalPath, **kwargs):
                 destination = dest.join(*key_parts)
                 destination.dirname().mkdir(parents=True, exist_ok=True)
                 s3.download_file(
-                    Bucket=bucket, Key=key["Key"], Filename=str(destination)
+                    Bucket=bucket,
+                    Key=key["Key"],
+                    Filename=str(destination),
+                    ExtraArgs=kwargs,
                 )
 
             if "NextContinuationToken" in batch:
@@ -895,10 +898,15 @@ def copy_s3_local(src: S3Path, dest: LocalPath, **kwargs):
     elif src.is_file():
         if dest.is_dir():
             s3.download_file(
-                Bucket=bucket, Key=prefix, Filename=str(dest / src.parts[-1])
+                Bucket=bucket,
+                Key=prefix,
+                Filename=str(dest / src.parts[-1]),
+                ExtraArgs=kwargs,
             )
         else:
-            s3.download_file(Bucket=bucket, Key=prefix, Filename=str(dest))
+            s3.download_file(
+                Bucket=bucket, Key=prefix, Filename=str(dest), ExtraArgs=kwargs,
+            )
     else:
         raise UnsupportedCopyOperation("src was not a directory or a file")
 
