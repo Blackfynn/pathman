@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.1.5]
+### Added
+- Parallelism on s3 -> local copies
+
+### Fixed
+- Recursive copies would create too many directories
+
 ## [0.1.4]
 ### Added
 - A new function (`copy_s3_local`) to copy from s3 to local
