@@ -65,7 +65,7 @@ def copy_s3_local(
         destination = Path(str(dest.join(*key_parts)))
         destination.dirname().mkdir(parents=True, exist_ok=True)
         s3.download_file(
-            Bucket=bucket, Key=key, Filename=str(destination), ExtraArgs=kwargs,
+            Bucket=bucket, Key=key, Filename=str(destination), ExtraArgs=kwargs
         )
 
     # copy will be recursive automatically if the src is a directory
@@ -103,7 +103,7 @@ def copy_s3_local(
             )
         else:
             s3.download_file(
-                Bucket=bucket, Key=prefix, Filename=str(dest), ExtraArgs=kwargs,
+                Bucket=bucket, Key=prefix, Filename=str(dest), ExtraArgs=kwargs
             )
     else:
         raise UnsupportedCopyOperation(

@@ -9,11 +9,7 @@ from moto import mock_s3  # type: ignore
 from pathman.path import Path
 from pathman._impl import S3Path, LocalPath
 
-from pathman.copy import (
-    copy_local_s3,
-    copy_s3_local,
-    copy,
-)
+from pathman.copy import copy_local_s3, copy_s3_local, copy
 
 
 def random_bucket() -> str:

@@ -19,8 +19,10 @@ class BlackfynnPath(AbstractPath, RemotePath):
         except ImportError:
             raise ImportError("blackfynn client is required for BlackfynnPath")
 
-        from blackfynn import Blackfynn  # type: ignore
-        from blackfynn.models import BaseDataNode  # type: ignore
+        from blackfynn import Blackfynn
+        from blackfynn.models import BaseDataNode
+
+        self.Blackfynn = Blackfynn
 
         if not path.startswith("bf://"):
             raise ValueError("Blackfynn paths must begin with bf://")
@@ -37,7 +39,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         else:
             self._pathstr = "bf://" + os.path.join(dataset, path[len("bf://") :])
         self._profile = profile
-        bf = Blackfynn(self._profile)
+        bf = self.Blackfynn(self._profile)
         root = None
         try:
             root = bf.get_dataset(dataset)
@@ -113,7 +115,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
             else:
                 raise FileExistsError("Can't mkdir {}".format(self))
 
-        bf = Blackfynn(self._profile)
+        bf = self.Blackfynn(self._profile)
         tokens = self.parts[1:]
         root = bf.get_dataset(tokens.pop(0))
         for token in tokens:
@@ -180,7 +182,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                     if hasattr(item, "sources"):
                         if len(item.sources) > 1:
                             logging.warning("{} has too many sources".format(item))
-                        extension = Path(item.sources[0].s3_key).extension
+                        extension = item.sources[0].s3_key.split(".")[-1]
                     yield BlackfynnPath(item_path + (extension if extension else ""))
 
     def glob(self, pattern: str) -> List["BlackfynnPath"]:
@@ -211,7 +213,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
         for item in self._bf_object.items:
             ext = None
             if hasattr(item, "sources"):
-                ext = Path(item.sources[0].s3_key).extension
+                ext = item.sources[0].s3_key.split(".")[-1]
                 if len(item.sources) > 1:
                     logging.warning("{} has too many sources".format(item))
             files.append(self.join(item.name + (ext if ext else "")))
@@ -250,7 +252,7 @@ class BlackfynnPath(AbstractPath, RemotePath):
                 f.write(contents)
             parent_dir = BlackfynnPath(self._pathstr[: self._pathstr.rfind("/")])
             data = parent_dir._bf_object.upload(path, **kwargs)
-            bf = Blackfynn(self._profile)
+            bf = self.Blackfynn(self._profile)
             self._bf_object = bf.get(data[0][0]["package"]["content"]["id"])
 
         return len(contents)

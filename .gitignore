@@ -108,5 +108,3 @@ TAGS*
 *.swp
 venv/
 .mypy_cache/
-
-
