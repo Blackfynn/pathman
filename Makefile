@@ -1,4 +1,4 @@
-.PHONY: help test clean build push
+.PHONY: help test clean clean-docker clean-test docs servedocs
 
 .DEFAULT: help
 
@@ -7,7 +7,7 @@ IMAGE_TAG ?= "latest"
 help:
 	@echo "Make Help"
 	@echo "make test - build and spin up docker containers, run tests"
-	@echo "make clean - remove docker containers"
+	@echo "make clean - shut down docker container, clean up docs"
 
 test: clean
 	docker-compose build pathman
@@ -19,6 +19,17 @@ build: clean
 push: clean
 	IMAGE_TAG=$(IMAGE_TAG) docker-compose push pathman
 
-clean:
+clean: clean-docker clean-docs
+
+clean-docker:
 	docker-compose down
 	docker-compose rm
+
+clean-docs:
+	rm -rf docs/_build
+
+docs: clean-docs
+	cd docs/ && $(MAKE) html
+
+servedocs: docs
+	cd docs/_build/html && python -m http.server

@@ -10,7 +10,7 @@ Path
 .. autoclass:: pathman.Path
    :members:
 
-.. autofunction:: pathman.path.copy
+.. autofunction:: pathman.copy.copy
 
 Exceptions
 ==========

@@ -5,13 +5,13 @@ from typing import List, Union, Generator
 from pathman.exc import UnsupportedPathTypeException
 from pathman.base import AbstractPath
 from pathman.utils import is_file
-from pathman._impl import S3Path, LocalPath, BlackfynnPath
+from pathman._impl import S3Path, LocalPath
 
 
 class Path(AbstractPath, os.PathLike):
     """ Represents a generic path object """
 
-    location_class_map = {"local": LocalPath, "s3": S3Path, "bf": BlackfynnPath}
+    location_class_map = {"local": LocalPath, "s3": S3Path}
 
     def __init__(self, path: str, **kwargs) -> None:
         """Constructor for a new Path
@@ -27,9 +27,7 @@ class Path(AbstractPath, os.PathLike):
         self._location: str = determine_output_location(path)
         if self._location not in self.location_class_map:
             raise UnsupportedPathTypeException("inferred location is not supported")
-        self._impl: Union[
-            AbstractPath, LocalPath, S3Path, BlackfynnPath
-        ] = self.location_class_map[
+        self._impl: Union[AbstractPath, LocalPath, S3Path] = self.location_class_map[
             self._location
         ](  # type: ignore
             path, **kwargs
@@ -231,6 +229,4 @@ def determine_output_location(abspath: str) -> str:
     """
     if abspath.startswith("s3"):
         return "s3"
-    elif abspath.startswith("bf"):
-        return "bf"
     return "local"
