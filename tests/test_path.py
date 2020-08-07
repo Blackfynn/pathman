@@ -12,7 +12,6 @@ from moto import mock_s3  # type: ignore
 from blackfynn import Blackfynn  # type: ignore
 
 from pathman._impl import LocalPath, S3Path, BlackfynnPath
-from pathman.utils import is_file
 from pathman.path import (
     determine_output_location,
     Path,

@@ -8,3 +8,5 @@ boto3
 s3fs
 requests
 blackfynn
+pre-commit
+black
