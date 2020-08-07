@@ -1,27 +1,21 @@
 import os
-import pytest
-import mock
-import boto3
+import urllib
 import functools
-import random
-import string
-from moto import mock_s3
 from pkg_resources import resource_filename
 from tempfile import TemporaryDirectory
-from blackfynn import Blackfynn
-import urllib
-import shutil
 
+import mock
+import boto3  # type: ignore
+import pytest
+from moto import mock_s3  # type: ignore
+
+from blackfynn import Blackfynn  # type: ignore
+
+from pathman._impl import LocalPath, S3Path, BlackfynnPath
+from pathman.utils import is_file
 from pathman.path import (
-    is_file,
     determine_output_location,
-    LocalPath,
-    S3Path,
     Path,
-    copy_local_s3,
-    copy_s3_local,
-    copy,
-    BlackfynnPath,
 )
 
 
@@ -32,8 +26,12 @@ real_bucket = "s3://test-bucket"
 real_file = "s3://test-bucket/test-key/test_file.txt"
 
 
-def random_bucket() -> str:
-    return "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+def local_file():
+    return os.path.abspath(__file__)
+
+
+def local_dir():
+    return os.path.dirname(local_file())
 
 
 class MockBlackfynn(Blackfynn):
@@ -44,15 +42,6 @@ class MockBlackfynn(Blackfynn):
             super().__init__(api_token=token, api_secret=secret)
         else:
             super().__init__(profile)
-
-
-def local_file():
-    return os.path.abspath(__file__)
-
-
-def local_dir():
-    real_file = local_file()
-    return os.path.dirname(real_file)
 
 
 class TestPath(object):
@@ -195,7 +184,7 @@ class TestPath(object):
 
     @pytest.mark.parametrize(
         "head, tail",
-        [["/some/dir/", "some_file.txt"], ["s3://test-bucket", "some_file.txt"],],
+        [["/some/dir/", "some_file.txt"], ["s3://test-bucket", "some_file.txt"]],
     )
     def test_truediv_join(self, head, tail):
         path = Path(head)
@@ -589,22 +578,6 @@ class TestS3Path(object):
 @pytest.mark.parametrize(
     "path,expectation",
     [
-        ("/some/local/file.txt", True),
-        ("/some/local/dir/", False),
-        ("some/local/dir/", False),
-        ("some/local/dir", False),
-        ("s3://some/remote/file.txt", True),
-        ("s3://some/remote/dir/", False),
-        ("s3://some/remote/dir", False),
-    ],
-)
-def test_is_file(path, expectation):
-    assert is_file(path) == expectation
-
-
-@pytest.mark.parametrize(
-    "path,expectation",
-    [
         ("/some/local/file.txt", "local"),
         ("/some/local/dir/", "local"),
         ("some/local/dir/", "local"),
@@ -616,84 +589,3 @@ def test_is_file(path, expectation):
 )
 def test_determine_output_location(path, expectation):
     assert determine_output_location(path) == expectation
-
-
-@mock_s3
-def test_copy_local_s3():
-    s3 = boto3.client("s3")
-    bucket = random_bucket()
-    s3.create_bucket(Bucket=bucket)
-    remote_file = S3Path("{}/test.py".format(bucket))
-    copy_local_s3(LocalPath(local_file()), remote_file)
-    assert remote_file.exists()
-
-
-@mock_s3
-def test_copy():
-    s3 = boto3.client("s3")
-    bucket = random_bucket()
-    s3.create_bucket(Bucket=bucket)
-    remote_file = Path("s3://{}/test.py".format(bucket))
-    local_file_path = Path(local_file())
-    copy(local_file_path, remote_file)
-    assert remote_file.exists()
-
-
-@mock_s3
-def test_copy_s3_local_file():
-    s3 = boto3.client("s3")
-    bucket = random_bucket()
-
-    s3.create_bucket(Bucket=bucket)
-    s3.upload_file(local_file(), bucket, "test.py")
-
-    local_test_file = Path(os.path.join(local_dir(), "test.py"))
-    copy_s3_local(S3Path("s3://{}/test.py".format(bucket)), local_test_file)
-
-    assert local_test_file.exists()
-    local_test_file.remove()
-
-
-@mock_s3
-def test_copy_s3_local_file_supports_dest_dir():
-    s3 = boto3.client("s3")
-    bucket = random_bucket()
-
-    s3.create_bucket(Bucket=bucket)
-    s3.upload_file(local_file(), bucket, "test.py")
-
-    local_test_file = Path(os.path.join(local_dir(), "test.py"))
-
-    # This should accept a directory argument
-    copy_s3_local(S3Path("s3://{}/test.py".format(bucket)), Path(local_dir()))
-
-    assert local_test_file.exists()
-    local_test_file.remove()
-
-
-@mock_s3
-def test_copy_s3_local_recursive():
-    s3 = boto3.client("s3")
-    bucket = random_bucket()
-
-    s3.create_bucket(Bucket=bucket)
-
-    s3.upload_file(local_file(), bucket, "basedir/test.py")
-    s3.upload_file(local_file(), bucket, "basedir/subdir/test.py")
-    s3.upload_file(local_file(), bucket, "basedir/subdir/test2.py")
-    s3.upload_file(local_file(), bucket, "basedir/subdir/subdir/test.py")
-
-    root_path = Path(os.path.join(local_dir(), "basedir"))
-    copy_s3_local(S3Path("s3://{}/basedir".format(bucket)), root_path)
-
-    try:
-        assert root_path.exists()
-        assert (root_path / "test.py").exists()
-        assert (root_path / "subdir").exists()
-        assert (root_path / "subdir" / "test.py").exists()
-        assert (root_path / "subdir" / "test2.py").exists()
-        assert (root_path / "subdir" / "subdir").exists()
-        assert (root_path / "subdir" / "subdir" / "test.py").exists()
-
-    finally:
-        shutil.rmtree(root_path, ignore_errors=True)

@@ -4,3 +4,7 @@ moto
 mypy
 flake8
 pre-commit
+boto3
+s3fs
+requests
+blackfynn

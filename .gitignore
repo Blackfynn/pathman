@@ -96,6 +96,7 @@ ENV/
 # Vim
 *.swp
 *.swo
+TAGS*
 
 # Visual Studio Code
 .vscode
