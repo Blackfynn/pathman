@@ -1,28 +1,24 @@
-#!/usr/bin/env/ python
 # -*- coding: utf-8 -*-
+from setuptools import setup
 
-import re
-from setuptools import setup, find_packages
+__version__ = "0.2.0"
 
-with open('pathman/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
-
-with open('requirements.txt', 'r') as fd:
+with open("requirements.txt", "r") as fd:
     requirements = fd.readlines()
 
 setup(
     name="pathman",
-    version=version,
+    version=__version__,
     author="Blackfynn, Inc.",
     author_email="zach.duey@blackfynn.com",
-    description="Utility for interacting with local and remote paths through a uniform interface",
-    packages=find_packages(),
-    package_dir={'pathman': 'pathman'},
+    description=(
+        "Utility for interacting with local and remote paths through a uniform"
+        " interface"
+    ),
+    packages=["pathman"],
+    package_dir={"pathman": "pathman"},
+    package_data={"pathman": ["py.typed"]},
     install_requires=requirements,
     license="",
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "Topic :: Utilities",
-    ]
+    classifiers=["Development Status :: 3 - Alpha", "Topic :: Utilities"],
 )

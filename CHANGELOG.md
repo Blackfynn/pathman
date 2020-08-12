@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.0]
+### Changed
+- Only import optional dependencies (s3fs, boto3) when needed
+
+### Removed
+- Removed BlackfynnPath, which has gone unused
+
 ## [0.1.5]
 ### Added
 - Parallelism on s3 -> local copies

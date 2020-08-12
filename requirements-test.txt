@@ -1,6 +1,0 @@
-pytest
-pytest-cov
-moto
-mypy
-flake8
-pre-commit

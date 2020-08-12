@@ -65,8 +65,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/html
-docs/doctrees
+docs/_build
 
 # PyBuilder
 target/
@@ -96,6 +95,7 @@ ENV/
 # Vim
 *.swp
 *.swo
+TAGS*
 
 # Visual Studio Code
 .vscode
@@ -107,5 +107,3 @@ ENV/
 *.swp
 venv/
 .mypy_cache/
-
-

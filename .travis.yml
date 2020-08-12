@@ -12,7 +12,7 @@ before_install:
 install:
   - pip install --upgrade pip setuptools wheel
   - pip install -r requirements.txt
-  - pip install --upgrade -r requirements-test.txt
+  - pip install --upgrade -r requirements-dev.txt
   - pip install .
 
 after_success: bash <(curl -s https://codecov.io/bash)
@@ -21,7 +21,7 @@ jobs:
   include:
     - stage: "Test"
       python: '3.6'
-      script: 
+      script:
        - flake8 pathman/
        - mypy pathman/
        - pytest --integration

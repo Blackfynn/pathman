@@ -1,0 +1,11 @@
+pytest
+pytest-cov
+moto
+mypy
+flake8
+pre-commit
+black
+Sphinx>3.0
+sphinx-rtd-theme
+nbsphinx
+sphinx-autodoc-typehints
