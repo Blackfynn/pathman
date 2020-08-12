@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from setuptools import setup
+from setuptools import setup, find_packages
 
 __version__ = "0.2.0"
 
@@ -15,7 +15,7 @@ setup(
         "Utility for interacting with local and remote paths through a uniform"
         " interface"
     ),
-    packages=["pathman"],
+    packages=find_packages(exclude=["tests"]),
     package_dir={"pathman": "pathman"},
     package_data={"pathman": ["py.typed"]},
     install_requires=requirements,
