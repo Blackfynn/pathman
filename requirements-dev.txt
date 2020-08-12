@@ -5,6 +5,8 @@ mypy
 flake8
 pre-commit
 black
+s3fs
+boto3
 Sphinx>3.0
 sphinx-rtd-theme
 nbsphinx
