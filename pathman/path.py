@@ -22,7 +22,7 @@ class Path(AbstractPath, os.PathLike):
            A path string
         """
         path = str(path)
-        self._original_kwargs = kwargs
+        self._original_kwargs = dict({}, **kwargs)
         self._pathstr: str = path
         self._isfile: bool = is_file(path)
         self._location: str = determine_output_location(path)

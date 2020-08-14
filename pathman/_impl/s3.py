@@ -18,7 +18,7 @@ class S3Path(AbstractPath, RemotePath):
 
         from s3fs import S3FileSystem  # type: ignore
 
-        self._original_kwargs = kwargs
+        self._original_kwargs = dict({}, **kwargs)
         self._pathstr = path
         self._path = S3FileSystem(anon=False, **kwargs)
 
