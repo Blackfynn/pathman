@@ -18,6 +18,7 @@ class S3Path(AbstractPath, RemotePath):
 
         from s3fs import S3FileSystem  # type: ignore
 
+        self._original_kwargs = kwargs
         self._pathstr = path
         self._path = S3FileSystem(anon=False, **kwargs)
 
@@ -68,7 +69,7 @@ class S3Path(AbstractPath, RemotePath):
 
     def join(self, *pathsegments: str) -> "S3Path":
         joined = os.path.join(self._pathstr, *pathsegments)
-        return S3Path(joined)
+        return S3Path(joined, **self._original_kwargs)
 
     def open(self, mode="r", **kwargs):
         return self._path.open(self._pathstr, mode=mode, **kwargs)
@@ -105,18 +106,24 @@ class S3Path(AbstractPath, RemotePath):
     def walk(self, **kwargs) -> Generator["S3Path", None, None]:
         for root, directories, files in self._path.walk(self._pathstr, **kwargs):
             for f in files:
-                yield S3Path(os.path.join(root, f))
+                yield S3Path(os.path.join(root, f), **self._original_kwargs)
 
     def ls(self, refresh=True) -> List["S3Path"]:
-        all_files = [S3Path("s3://" + c) for c in self._path.ls(self._pathstr)]
+        all_files = [
+            S3Path("s3://" + c, **self._original_kwargs)
+            for c in self._path.ls(self._pathstr)
+        ]
         return all_files
 
     def glob(self, pattern) -> List["S3Path"]:
         globber = self.join(pattern)._pathstr
-        return [S3Path("s3://" + p) for p in self._path.glob(globber)]
+        return [
+            S3Path("s3://" + p, **self._original_kwargs)
+            for p in self._path.glob(globber)
+        ]
 
     def with_suffix(self, suffix) -> "S3Path":
-        return S3Path(self._pathstr + suffix)
+        return S3Path(self._pathstr + suffix, **self._original_kwargs)
 
     @property
     def stem(self) -> str:

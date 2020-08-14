@@ -22,6 +22,7 @@ class Path(AbstractPath, os.PathLike):
            A path string
         """
         path = str(path)
+        self._original_kwargs = kwargs
         self._pathstr: str = path
         self._isfile: bool = is_file(path)
         self._location: str = determine_output_location(path)
@@ -46,7 +47,7 @@ class Path(AbstractPath, os.PathLike):
         return self._pathstr == other._pathstr
 
     def __truediv__(self, key) -> "Path":
-        return Path(self._impl.__truediv__(key)._pathstr)
+        return Path(self._impl.__truediv__(key)._pathstr, **self._original_kwargs)
 
     @property
     def extension(self) -> str:
@@ -90,7 +91,7 @@ class Path(AbstractPath, os.PathLike):
 
     def join(self, *pathsegments) -> "Path":
         """ Combine the current path with the given segments """
-        return Path(self._impl.join(*pathsegments)._pathstr)
+        return Path(self._impl.join(*pathsegments)._pathstr, **self._original_kwargs)
 
     def basename(self) -> str:
         """Return the base name of the current path
@@ -167,17 +168,17 @@ class Path(AbstractPath, os.PathLike):
 
     def expanduser(self) -> "Path":
         """ Return a new path with ~ expanded """
-        return Path(self._impl.expanduser()._pathstr)
+        return Path(self._impl.expanduser()._pathstr, **self._original_kwargs)
 
     def dirname(self) -> "Path":
         """Return the directory name of the current path. Mimics the behavior
         of `os.path.dirname`
         """
-        return Path(os.path.dirname(self._pathstr))
+        return Path(os.path.dirname(self._pathstr), **self._original_kwargs)
 
     def abspath(self) -> "Path":
         """ Make the current path absolute """
-        return Path(self._impl.abspath()._pathstr)
+        return Path(self._impl.abspath()._pathstr, **self._original_kwargs)
 
     def walk(self, **kwargs) -> Generator["Path", None, None]:
         """Get a list of files below the current path
@@ -187,16 +188,20 @@ class Path(AbstractPath, os.PathLike):
         This does not mirror the behavior of `os.walk`. A list of absolute
         paths are returned
         """
-        return (Path(p._pathstr) for p in self._impl.walk(**kwargs))
+        return (
+            Path(p._pathstr, **self._original_kwargs) for p in self._impl.walk(**kwargs)
+        )
 
     def ls(self) -> List["Path"]:
-        return [Path(p._pathstr) for p in self._impl.ls()]
+        return [Path(p._pathstr, **self._original_kwargs) for p in self._impl.ls()]
 
     def glob(self, path) -> List["Path"]:
-        return [Path(p._pathstr) for p in self._impl.glob(path)]
+        return [
+            Path(p._pathstr, **self._original_kwargs) for p in self._impl.glob(path)
+        ]
 
     def with_suffix(self, suffix) -> "Path":
-        return Path(self._impl.with_suffix(suffix)._pathstr)
+        return Path(self._impl.with_suffix(suffix)._pathstr, **self._original_kwargs)
 
     @property
     def stem(self) -> str:
