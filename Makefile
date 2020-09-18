@@ -1,6 +1,5 @@
 .PHONY: help test clean clean-min clean-docker clean-test clean-build \
-	clean-pyc clean-test clean-docker clean-docs docs servedocs install dist \
-	release
+	clean-pyc clean-test clean-docker clean-docs docs servedocs
 
 .DEFAULT: help
 
@@ -56,14 +55,3 @@ docs: clean-docs
 
 servedocs: docs
 	cd docs/_build/html && python -m http.server
-
-install: clean
-	echo "Install package to activate python's site-packages"
-	python setup.py install
-
-dist: install
-	python setup.py bdist_wheel
-
-release: dist
-	echo "Deploying to private nexus pypi repository"
-	twine upload dist/* --repository-url https://nexus.blackfynn.cc/repository/pypi-prod/ -u ${BLACKFYNN_NEXUS_USER} -p ${BLACKFYNN_NEXUS_PW}
