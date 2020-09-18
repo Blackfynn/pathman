@@ -18,7 +18,7 @@ setup(
     packages=find_packages(exclude=["tests"]),
     package_dir={"pathman": "pathman"},
     package_data={"pathman": ["py.typed"]},
-    extras_requires={"s3": ["s3fs"]},
+    extras_requires={"s3": ["s3fs<0.5.0"]},
     install_requires=requirements,
     license="",
     classifiers=["Development Status :: 3 - Alpha", "Topic :: Utilities"],
