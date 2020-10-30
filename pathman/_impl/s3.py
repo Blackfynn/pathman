@@ -20,7 +20,10 @@ class S3Path(AbstractPath, RemotePath):
 
         self._original_kwargs = dict({}, **kwargs)
         self._pathstr = path
-        self._path = S3FileSystem(anon=False, **kwargs)
+        if "anon" not in kwargs:
+            kwargs["anon"] = False
+        self._anon = kwargs["anon"]
+        self._path = S3FileSystem(**kwargs)
 
     def __str__(self) -> str:
         return self._pathstr
