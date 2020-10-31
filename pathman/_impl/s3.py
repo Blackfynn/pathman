@@ -76,7 +76,7 @@ class S3Path(AbstractPath, RemotePath):
         return S3Path(joined, **self._original_kwargs)
 
     def open(self, mode="rb", **kwargs):
-        return self._path._open(self._pathstr, mode=mode, **kwargs)
+        return self._path.open(self._pathstr, mode=mode, **kwargs)
 
     def write_bytes(self, contents, **kwargs):
         with self.open("wb") as f:
