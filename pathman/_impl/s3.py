@@ -1,5 +1,4 @@
 import os
-import io
 import importlib
 from typing import List, Generator
 from pathlib import PurePath
@@ -75,7 +74,7 @@ class S3Path(AbstractPath, RemotePath):
         joined = os.path.join(self._pathstr, *pathsegments)
         return S3Path(joined, **self._original_kwargs)
 
-    def open(self, mode="rb", **kwargs):
+    def open(self, mode="r", **kwargs):
         return self._path.open(self._pathstr, mode=mode, **kwargs)
 
     def write_bytes(self, contents, **kwargs):
@@ -92,9 +91,8 @@ class S3Path(AbstractPath, RemotePath):
         return self._path.rm(self._pathstr)
 
     def read_text(self, **kwargs):
-        with self.open("rb") as f:
-            text_wrapper = io.TextIOWrapper(f)
-            contents = text_wrapper.read()
+        with self.open("r") as f:
+            contents = f.read(**kwargs)
         return contents
 
     def read_bytes(self, **kwargs):
